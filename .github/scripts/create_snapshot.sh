@@ -26,7 +26,7 @@ build_unrar()
   
   pushd /tmp/unrar
   
-  make clean lib CXXFLAGS+="-std=c++14 -DSILENT --target=$CLANG_TARGET" LDFLAGS+="-dylib"
+  make clean lib CXXFLAGS+="-std=c++14 -DSILENT -target=$CLANG_TARGET" LDFLAGS+="-dylib"
   ls -la
   mkdir -p $DEST_DIR
   mv libunrar.so $DEST_DIR/libunrar.dylib
