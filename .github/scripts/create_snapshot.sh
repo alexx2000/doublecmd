@@ -20,6 +20,17 @@ defaults write $(pwd)/doublecmd.app/Contents/Info CFBundleVersion $DC_REVISION
 defaults write $(pwd)/doublecmd.app/Contents/Info CFBundleShortVersionString $DC_VER
 plutil -convert xml1 $(pwd)/doublecmd.app/Contents/Info.plist
 
+build_unrar()
+{
+  DEST_DIR=install/darwin/lib/$CPU_TARGET
+  
+  pushd /tmp/unrar
+  make clean lib CXXFLAGS+="-fPIC -DSILENT -m64" LDFLAGS+="-dylib -arch $CPU_TARGET" STRIP=true
+  mkdir -p $DEST_DIR
+  mv libunrar.so $DEST_DIR/libunrar.dylib
+  popd
+}
+
 build_doublecmd()
 {
   # Build all components of Double Commander
@@ -48,6 +59,7 @@ export CPU_TARGET=aarch64
 # Set minimal Mac OS X target version
 export MACOSX_DEPLOYMENT_TARGET=11.0
 
+build_unrar
 build_doublecmd
 
 # Set processor architecture
@@ -55,4 +67,5 @@ export CPU_TARGET=x86_64
 # Set minimal Mac OS X target version
 export MACOSX_DEPLOYMENT_TARGET=10.11
 
+build_unrar
 build_doublecmd
