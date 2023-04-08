@@ -172,7 +172,7 @@ type
 
 const
   { Default hotkey list version number }
-  hkVersion = 58;
+  hkVersion = 59;
   // 54 - In "Viewer" context, added the "W" for "cm_WrapText", "4" for "cm_ShowAsDec", "8" for "cm_ShowOffice".
   // 53 - In "Main" context, change shortcut "Alt+`" to "Alt+0" for the "cm_ActivateTabByIndex".
   // 52 - In "Main" context, add shortcut "Ctrl+Shift+B" for "cm_FlatViewSel".
@@ -642,6 +642,7 @@ var
   gViewerLeftMargin: Integer;
   gViewerLineSpacing: Integer;
   gViewerAutoCopy: Boolean;
+  gViewerSynEditMask: String;
 
   { Editor }
   gEditWaitTime: Integer;
@@ -1237,6 +1238,7 @@ begin
       AddIfNotExists(['6'],[],'cm_ShowGraphics');
       AddIfNotExists(['7'],[],'cm_ShowPlugins');
       AddIfNotExists(['8'],[],'cm_ShowOffice');
+      AddIfNotExists(['9'],[],'cm_ShowCode');
 
       AddIfNotExists(['C'],[],'cm_ImageCenter');
       AddIfNotExists(['F'],[],'cm_StretchImage');
@@ -1264,6 +1266,7 @@ begin
       //AddIfNotExists(['Down'],[],'cm_Rotate90');
 
       AddIfNotExists(VK_P, [ssModifier], 'cm_Print');
+      AddIfNotExists(VK_G, [ssModifier], 'cm_GotoLine');
       AddIfNotExists(VK_A, [ssModifier], 'cm_SelectAll');
       AddIfNotExists(VK_C, [ssModifier], 'cm_CopyToClipboard');
       AddIfNotExists(VK_Z, [ssModifier], 'cm_Undo');
@@ -2087,6 +2090,7 @@ begin
   gViewerLineSpacing := 0;
   gPrintMargins:= Classes.Rect(200, 200, 200, 200);
   gViewerAutoCopy := True;
+  gViewerSynEditMask := AllFilesMask;
 
   { Editor }
   gEditWaitTime := 2000;
@@ -3199,6 +3203,7 @@ begin
       gBookFontColor := GetValue(Node, 'FontColor', gBookFontColor);
       gTextPosition := GetValue(Node, 'TextPosition',  gTextPosition);
       gViewerAutoCopy := GetValue(Node, 'AutoCopy',  gViewerAutoCopy);
+      gViewerSynEditMask := GetValue(Node, 'SynEditMask', gViewerSynEditMask);
       if LoadedConfigVersion < 7 then
       begin
         gThumbSave := GetValue(Node, 'SaveThumbnails', gThumbSave);
@@ -3839,6 +3844,7 @@ begin
     SetValue(Node, 'FontColor', gBookFontColor);
     SetValue(Node, 'TextPosition', gTextPosition);
     SetValue(Node, 'AutoCopy', gViewerAutoCopy);
+    SetValue(Node, 'SynEditMask', gViewerSynEditMask);
 
     { Editor }
     Node := FindNode(Root, 'Editor',True);
