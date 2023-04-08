@@ -25,7 +25,7 @@ build_unrar()
   DEST_DIR=install/darwin/lib/$CPU_TARGET
   
   pushd /tmp/unrar
-  make clean lib CXXFLAGS+="-fPIC -DSILENT -m64" LDFLAGS+="-dylib -arch $CPU_TARGET" STRIP=true
+  make clean lib CXXFLAGS+="-std=c++14 -fPIC -DSILENT -m64" LDFLAGS+="-dylib -arch $CPU_TARGET" STRIP=true
   mkdir -p $DEST_DIR
   mv libunrar.so $DEST_DIR/libunrar.dylib
   popd
