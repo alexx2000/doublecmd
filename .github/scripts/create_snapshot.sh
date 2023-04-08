@@ -25,7 +25,9 @@ build_unrar()
   DEST_DIR=install/darwin/lib/$CPU_TARGET
   
   pushd /tmp/unrar
-  make clean lib CXXFLAGS+="-std=c++14 -fPIC -DSILENT -m64" LDFLAGS+="-dylib -arch $CPU_TARGET" STRIP=true
+  
+  make clean lib CXXFLAGS+="-std=c++14 -DSILENT --target=$CLANG_TARGET" LDFLAGS+="-dylib"
+  ls -la
   mkdir -p $DEST_DIR
   mv libunrar.so $DEST_DIR/libunrar.dylib
   popd
@@ -56,6 +58,7 @@ echo $DC_REVISION > $PACK_DIR/revision.php
 
 # Set processor architecture
 export CPU_TARGET=aarch64
+export CLANG_TARGET=arm64-apple-darwin
 # Set minimal Mac OS X target version
 export MACOSX_DEPLOYMENT_TARGET=11.0
 
@@ -64,6 +67,7 @@ build_doublecmd
 
 # Set processor architecture
 export CPU_TARGET=x86_64
+export CLANG_TARGET=x86_64-apple-darwin
 # Set minimal Mac OS X target version
 export MACOSX_DEPLOYMENT_TARGET=10.11
 
