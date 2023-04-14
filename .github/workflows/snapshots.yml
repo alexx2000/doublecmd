@@ -15,31 +15,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      matrix:
-        operating-system: [macos-11]
-        lazarus-versions: [stable]
+  build-win:
+    runs-on: windows-latest
     steps:
-    - name: Install Free Pascal
-      uses: alexx2000/setup-fpc@master
+    - name: Install Lazarus
+      uses: gcarreno/setup-lazarus@v3.2
       with:
-        lazarus-version: ${{ matrix.lazarus-versions }}
-
-    - name: Get Lazarus source
-      uses: actions/checkout@v3
-      with:
-            repository: 'fpc/Lazarus'
-
-    - name: Build and install Lazarus
-      run: make all install
-
-    - name: Create Lazarus config
-      run: |
-           sudo mkdir -p /etc/lazarus
-           sudo cp tools/install/macosx/environmentoptions.xml /etc/lazarus/environmentoptions.xml
-           sudo sed -i -e "s|_PPCARCH_|fpc|g; s|/Developer/lazarus|/usr/local/share/lazarus|g" /etc/lazarus/environmentoptions.xml
+        lazarus-version: "stable"
+        with-cache: false
 
     - name: Checkout source
       uses: actions/checkout@v2
@@ -47,10 +30,11 @@ jobs:
         fetch-depth: 0
 
     - name: Build packages
-      run: ./.github/scripts/create_snapshot.sh
+      run: ./.github/scripts/create_snapshot.bat
 
     - name: Deploy to snapshot server
       run: ./.github/scripts/upload_snapshot.sh
+      shell: bash
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
         REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
