@@ -11,8 +11,8 @@ if [[ "$OSTYPE" == "msys" ]]; then
 
   icacls.exe ssh_key //inheritance:r
 
-  echo "rm *.zip" >> upload_snapshot.txt
-  echo "put *.zip" >> upload_snapshot.txt
+  echo "rm *.7z" >> upload_snapshot.txt
+  echo "put *.7z" >> upload_snapshot.txt
   echo "put *.txt" >> upload_snapshot.txt
 
 else
