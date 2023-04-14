@@ -16,7 +16,7 @@ call src\platform\git2revisioninc.exe.cmd %CD%
 echo %REVISION%> %PACK_DIR%\revision.txt
 
 rem Get libraries
-curl -o install/windows.7z https://github.com/doublecmd/snapshots/raw/main/windows.7z
+curl -o install/windows.7z -L https://github.com/doublecmd/snapshots/raw/main/windows.7z
 pushd install
 "%ProgramFiles%\7-Zip\7z.exe" -x windows.7z
 del /Q windows.7z
