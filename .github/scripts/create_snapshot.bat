@@ -15,6 +15,9 @@ rem Get revision number
 call src\platform\git2revisioninc.exe.cmd %CD%
 echo %REVISION%> %PACK_DIR%\revision.txt
 
+rem Change log
+git log -n 10 --format="%%h %%al %%ai%%n%%s%%n" > %PACK_DIR%\changelog.txt
+
 rem Get libraries
 pushd install
 curl -o windows.7z -L https://github.com/doublecmd/snapshots/raw/main/windows.7z
