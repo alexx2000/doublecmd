@@ -14,10 +14,9 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Install Lazarus
-      uses: gcarreno/setup-lazarus@v3.2
+      uses: alexx2000/setup-fpc@win
       with:
-        lazarus-version: "stable"
-        with-cache: false
+        lazarus-version: "2.2.6"
 
     - name: Checkout source
       uses: actions/checkout@v2
