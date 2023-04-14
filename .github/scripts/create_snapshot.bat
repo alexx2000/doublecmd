@@ -44,7 +44,7 @@ GOTO:EOF
   call install\windows\install.bat
 
   rem Create *.zip package
-  powershell "Compress-Archive -Path """%DC_INSTALL_DIR%\*""" -DestinationPath """%PACK_DIR%\doublecmd-%DC_VER%.r%REVISION%.%CPU_TARGET%-%OS_TARGET%.zip""""
+  "%ProgramFiles%\7-Zip\7z.exe" a -mx9 %PACK_DIR%\doublecmd-%DC_VER%.r%REVISION%.%CPU_TARGET%-%OS_TARGET%.zip %DC_INSTALL_DIR%\*
 
   rem Clean
   del /Q *.dll
