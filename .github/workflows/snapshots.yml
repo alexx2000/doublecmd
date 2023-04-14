@@ -2,11 +2,6 @@ name: build-snapshot
 
 on:
   push:
-    paths:
-    - 'components/**'
-    - 'plugins/**'
-    - 'sdk/**'
-    - 'src/**'    
     branches:
       - master
 
