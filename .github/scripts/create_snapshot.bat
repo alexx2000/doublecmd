@@ -43,10 +43,8 @@ GOTO:EOF
   rem Prepare install files
   call install\windows\install.bat
 
-  pushd %DC_INSTALL_DIR%
   rem Create *.zip package
-  zip -9 -Dr %PACK_DIR%\doublecmd-%DC_VER%.r%REVISION%.%CPU_TARGET%-%OS_TARGET%.zip *
-  popd
+  powershell "Compress-Archive -Path """%DC_INSTALL_DIR%\*""" -DestinationPath """%PACK_DIR%\doublecmd-%DC_VER%.r%REVISION%.%CPU_TARGET%-%OS_TARGET%.zip""""
 
   rem Clean
   del /Q *.dll
