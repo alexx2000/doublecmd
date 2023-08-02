@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Set Double Commander version
-DC_VER=1.1.0
-
 # The new package will be saved here
 PACK_DIR=$PWD/doublecmd-release
 
@@ -11,6 +8,12 @@ BUILD_PACK_DIR=/var/tmp/doublecmd-$(date +%y.%m.%d)
 
 # Save revision number
 DC_REVISION=$(install/linux/update-revision.sh ./ ./)
+
+# Read version number
+DC_MAJOR=$(grep -Po 'MajorVersionNr Value="\K\d+' src/doublecmd.lpi)
+DC_MINOR=$(grep -Po 'MinorVersionNr Value="\K\d+' src/doublecmd.lpi)
+DC_MICRO=$(grep -Po 'RevisionNr Value="\K\d+' src/doublecmd.lpi || echo 0)
+DC_VER=$DC_MAJOR.$DC_MINOR.$DC_MICRO
 
 # Set widgetset
 export lcl=cocoa
