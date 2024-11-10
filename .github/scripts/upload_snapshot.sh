@@ -12,7 +12,7 @@ if [[ "$OSTYPE" == "msys" ]]; then
   icacls.exe ssh_key //inheritance:r
 
   # Make 'rm' happy
-  echo "ln . temp.7z" >> upload_snapshot.txt
+  echo "ln temp.php temp.7z" >> upload_snapshot.txt
 
   echo "rm *.7z" >> upload_snapshot.txt
   echo "put *.7z" >> upload_snapshot.txt
