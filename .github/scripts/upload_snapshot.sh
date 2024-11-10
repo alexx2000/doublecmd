@@ -23,7 +23,7 @@ else
   chmod 0600 ssh_key
 
   # Make 'rm' happy
-  echo "ln . temp.dmg" >> upload_snapshot.txt
+  echo "ln temp.php temp.dmg" >> upload_snapshot.txt
 
   echo "rm *.dmg" >> upload_snapshot.txt
   echo "put *.dmg" >> upload_snapshot.txt
