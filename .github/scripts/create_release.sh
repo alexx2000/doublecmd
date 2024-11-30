@@ -52,12 +52,9 @@ build_doublecmd()
   popd
 
   # Create *.dmg package
-  HDI_TRY=0
-  HDI_MAX=3
+  HDI_TRY=1
   
-  while true; do
-
-  HDI_TRY=$((HDI_TRY+1))
+  while [ $HDI_TRY -le 3 ]; do
 
   echo "Try to create a package $HDI_TRY ..."
 
@@ -84,9 +81,7 @@ build_doublecmd()
     break
   fi
 
-  if [ $HDI_TRY -eq $HDI_MAX ]; then
-    break
-  fi
+  HDI_TRY=$((HDI_TRY+1))
 
   sleep 10
 
