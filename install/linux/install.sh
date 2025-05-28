@@ -129,7 +129,7 @@ if [ -z $CK_PORTABLE ]
     cp -r language $DC_USR_SHARE
     ln -sf ../../share/doublecmd/language $DC_INSTALL_DIR/language
     # Copy pixmaps
-    cp -r pixmaps $DC_USR_SHARE
+    cp -rp pixmaps $DC_USR_SHARE
     ln -sf ../../share/doublecmd/pixmaps $DC_INSTALL_DIR/pixmaps
     touch -r $DC_USR_SHARE/pixmaps/dctheme/icon-theme.cache $DC_USR_SHARE/pixmaps/dctheme
     # Copy highlighters
