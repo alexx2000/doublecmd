@@ -131,7 +131,7 @@ if [ -z $CK_PORTABLE ]
     # Copy pixmaps
     cp -r pixmaps $DC_USR_SHARE
     ln -sf ../../share/doublecmd/pixmaps $DC_INSTALL_DIR/pixmaps
-    touch -r $DC_USR_SHARE/pixmaps/dctheme $DC_USR_SHARE/pixmaps/dctheme/icon-theme.cache
+    touch -r $DC_USR_SHARE/pixmaps/dctheme/icon-theme.cache $DC_USR_SHARE/pixmaps/dctheme
     # Copy highlighters
     cp -r highlighters $DC_USR_SHARE
     ln -sf ../../share/doublecmd/highlighters $DC_INSTALL_DIR/highlighters
