@@ -27,7 +27,6 @@ jobs:
     - name: Switch to Xcode 16.2
       run: |
            sudo xcode-select --switch /Applications/Xcode_16.2.app
-           sudo xcodebuild -license
 
     - name: Get Lazarus source
       uses: actions/checkout@v5
@@ -62,3 +61,4 @@ jobs:
         SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
         REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
         REMOTE_USER: ${{ secrets.REMOTE_USER }}
+
