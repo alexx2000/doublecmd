@@ -56,7 +56,17 @@ jobs:
     - name: Build packages
       run: ./.github/scripts/create_snapshot.sh
 
+    - name: Save revision number
+      run: echo "REVISION=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
+      shell: bash
 
-
-
-
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_name: alexx2000/snapshots
+        repo_token: ${{ secrets.SNAPSHOTS }}
+        file: doublecmd-release/doublecmd*.dmg
+        release_name: Revision ${{ env.REVISION }}
+        tag: ${{ env.REVISION }}
+        overwrite: true
+        file_glob: true
