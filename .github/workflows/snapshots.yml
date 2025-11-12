@@ -26,9 +26,9 @@ jobs:
 
     - name: Modify Free Pascal config
       run: |
-           sudo echo "#ifdef cpuaarch64" >> /etc/fpc.cfg
-           sudo echo "  -WM10.15" >> /etc/fpc.cfg
-           sudo echo "#endif" >> /etc/fpc.cfg
+           echo "#ifdef cpuaarch64" | sudo tee -a /etc/fpc.cfg
+           echo "  -WM10.15" | sudo tee -a /etc/fpc.cfg
+           echo "#endif" | sudo tee -a /etc/fpc.cfg
 
     - name: Get Lazarus source
       uses: actions/checkout@v5
@@ -63,5 +63,6 @@ jobs:
         SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
         REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
         REMOTE_USER: ${{ secrets.REMOTE_USER }}
+
 
 
