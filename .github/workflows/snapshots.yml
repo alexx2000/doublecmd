@@ -58,27 +58,6 @@ jobs:
         REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
         REMOTE_USER: ${{ secrets.REMOTE_USER }}
 
-  build-win:
-    runs-on: windows-latest
-    steps:
-    - name: Install Lazarus
-      uses: doublecmd/lazarus-install@win
-      with:
-        lazarus-version: "stable"
 
-    - name: Checkout source
-      uses: actions/checkout@v5
-      with:
-        fetch-depth: 0
 
-    - name: Build packages
-      run: ./.github/scripts/create_snapshot.bat
-
-    - name: Deploy to snapshot server
-      run: ./.github/scripts/upload_snapshot.sh
-      shell: bash
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
-        REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-        REMOTE_USER: ${{ secrets.REMOTE_USER }}
 
