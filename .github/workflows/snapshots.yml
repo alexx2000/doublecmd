@@ -24,6 +24,9 @@ jobs:
       with:
         lazarus-version: "stable"
 
+    - name: Switch to Xcode 15.0
+      run: sudo xcode-select -s /Applications/Xcode_15.0.app
+
     - name: Get Lazarus source
       uses: actions/checkout@v5
       with:
@@ -67,6 +70,7 @@ jobs:
         tag: ${{ env.REVISION }}
         overwrite: true
         file_glob: true  
+
 
 
 
