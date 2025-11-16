@@ -30,7 +30,9 @@ jobs:
             repository: 'fpc/Lazarus'
 
     - name: Build and install Lazarus
-      run: sudo make all install
+      run: |
+           make all
+           sudo make install
 
     - name: Create Lazarus config
       run: |
@@ -61,6 +63,7 @@ jobs:
         tag: ${{ env.REVISION }}
         overwrite: true
         file_glob: true  
+
 
 
 
