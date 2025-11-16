@@ -17,17 +17,12 @@ concurrency:
 
 jobs:
   build-mac:
-    runs-on: macos-15-intel
+    runs-on: macos-14
     steps:
     - name: Install Free Pascal
       uses: doublecmd/lazarus-install@mac
       with:
         lazarus-version: "stable"
-
-    - name: Replace linker
-      run: |
-           sudo rm -f /Library/Developer/CommandLineTools/usr/bin/ld
-           sudo ln -sf /Library/Developer/CommandLineTools/usr/bin/ld-classic /Library/Developer/CommandLineTools/usr/bin/ld
 
     - name: Get Lazarus source
       uses: actions/checkout@v5
@@ -86,3 +81,4 @@ jobs:
         SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
         REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
         REMOTE_USER: ${{ secrets.REMOTE_USER }}
+
