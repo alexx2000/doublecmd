@@ -49,14 +49,19 @@ jobs:
         BOX_CLIENT_SECRET: ${{ secrets.BOX_CLIENT_SECRET }}
 
     - name: Build packages
-      run: ./.github/scripts/create_snapshot.sh
+      run: sudo ./.github/scripts/create_snapshot.sh
 
-    - name: Deploy to snapshot server
-      run: ./.github/scripts/upload_snapshot.sh
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
-        REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-        REMOTE_USER: ${{ secrets.REMOTE_USER }}
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_name: alexx2000/snapshots
+        repo_token: ${{ secrets.SNAPSHOTS }}
+        file: doublecmd-release/doublecmd*.7z
+        release_name: Revision ${{ env.REVISION }}
+        tag: ${{ env.REVISION }}
+        overwrite: true
+        file_glob: true  
+
 
 
 
