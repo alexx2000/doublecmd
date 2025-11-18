@@ -17,15 +17,12 @@ concurrency:
 
 jobs:
   build-mac:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
     - name: Install Free Pascal
       uses: doublecmd/lazarus-install@mac
       with:
         lazarus-version: "stable"
-
-    - name: Switch to Xcode 15.0
-      run: sudo xcode-select -s /Applications/Xcode_15.0.app
 
     - name: Get Lazarus source
       uses: actions/checkout@v5
@@ -60,16 +57,8 @@ jobs:
       run: echo "REVISION=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
       shell: bash 
 
-    - name: Upload binaries to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_name: alexx2000/snapshots
-        repo_token: ${{ secrets.SNAPSHOTS }}
-        file: doublecmd-release/doublecmd*.dmg
-        release_name: Revision ${{ env.REVISION }}
-        tag: ${{ env.REVISION }}
-        overwrite: true
-        file_glob: true  
+ 
+
 
 
 
