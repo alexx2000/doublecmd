@@ -17,7 +17,8 @@ concurrency:
 
 env:
   BODY: |
-    **These snapshots are generated automatically and are untested.**
+    > [!WARNING]
+    > These snapshots are generated automatically and are untested.
           
     **Linux (repositories)**
     [doublecmd-qt-latest](https://software.opensuse.org//download.html?project=home%3AAlexx2000%3Adoublecmd-svn&package=doublecmd-qt)
@@ -69,5 +70,6 @@ jobs:
         body: ${{ env.BODY }}
         overwrite: true
         file_glob: true
+
 
 
