@@ -29,10 +29,13 @@ env:
 
     **Microsoft Windows 32/64 bit  macOS >= 11**  
 
-    | First Header  | Second Header |
+    | Linux (repositories)  | Linux 64 bit (AppImage) |
     | ------------- | ------------- |
-    | Content Cell  | Content Cell  |
-    | Content Cell  | Content Cell  |
+    | [doublecmd-qt-latest](https://software.opensuse.org//download.html?project=home%3AAlexx2000%3Adoublecmd-svn&package=doublecmd-qt)  | [doublecmd-qt-latest-x86_64.AppImage](https://download.opensuse.org/repositories/home:/Alexx2000:/doublecmd-svn/AppImage/doublecmd-qt-latest-x86_64.AppImage)  |
+    | [doublecmd-gtk-latest](https://software.opensuse.org//download.html?project=home%3AAlexx2000%3Adoublecmd-svn&package=doublecmd-gtk)  | [doublecmd-gtk-latest-x86_64.AppImage](https://download.opensuse.org/repositories/home:/Alexx2000:/doublecmd-svn/AppImage/doublecmd-gtk-latest-x86_64.AppImage)  |
+
+    | Microsoft Windows 32/64 bit  | macOS >= 11 |
+    | ------------- | ------------- |
 
 jobs:
   build-win:
@@ -66,4 +69,5 @@ jobs:
         body: ${{ env.BODY }}
         overwrite: true
         file_glob: true
+
 
