@@ -46,6 +46,11 @@ jobs:
         tag: ${{ env.REVISION }}
         overwrite: true
         file_glob: true
-        body: "Go to the [Double Commander download page](https://sourceforge.net/p/doublecmd/wiki/Download) to download the latest release."
-
-
+        body: |
+          Linux (repositories)
+          [doublecmd-qt-latest](https://software.opensuse.org//download.html?project=home%3AAlexx2000%3Adoublecmd-svn&package=doublecmd-qt)
+          [doublecmd-gtk-latest](https://software.opensuse.org//download.html?project=home%3AAlexx2000%3Adoublecmd-svn&package=doublecmd-gtk)
+          
+          Linux 64 bit (AppImage)
+          [doublecmd-qt-latest-x86_64.AppImage](https://download.opensuse.org/repositories/home:/Alexx2000:/doublecmd-svn/AppImage/doublecmd-qt-latest-x86_64.AppImage)          
+          [doublecmd-gtk-latest-x86_64.AppImage](https://download.opensuse.org/repositories/home:/Alexx2000:/doublecmd-svn/AppImage/doublecmd-gtk-latest-x86_64.AppImage)
