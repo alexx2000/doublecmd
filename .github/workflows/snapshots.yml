@@ -41,10 +41,11 @@ jobs:
       with:
         repo_name: alexx2000/snapshots
         repo_token: ${{ secrets.SNAPSHOTS }}
-        file: doublecmd-release/doublecmd*.dmg
+        file: doublecmd-release/doublecmd*.7z
         release_name: Revision ${{ env.REVISION }}
         tag: ${{ env.REVISION }}
         overwrite: true
         file_glob: true
         body: "Go to the [Double Commander download page](https://sourceforge.net/p/doublecmd/wiki/Download) to download the latest release."
+
 
