@@ -15,6 +15,20 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  BODY: |
+    **These snapshots are generated automatically and are untested.**
+          
+    **Linux (repositories)**
+    [doublecmd-qt-latest](https://software.opensuse.org//download.html?project=home%3AAlexx2000%3Adoublecmd-svn&package=doublecmd-qt)
+    [doublecmd-gtk-latest](https://software.opensuse.org//download.html?project=home%3AAlexx2000%3Adoublecmd-svn&package=doublecmd-gtk)
+          
+    **Linux 64 bit (AppImage)**
+    [doublecmd-qt-latest-x86_64.AppImage](https://download.opensuse.org/repositories/home:/Alexx2000:/doublecmd-svn/AppImage/doublecmd-qt-latest-x86_64.AppImage)          
+    [doublecmd-gtk-latest-x86_64.AppImage](https://download.opensuse.org/repositories/home:/Alexx2000:/doublecmd-svn/AppImage/doublecmd-gtk-latest-x86_64.AppImage)
+
+    **Microsoft Windows 32/64 bit  macOS >= 11**  
+
 jobs:
   build-win:
     runs-on: windows-latest
@@ -44,18 +58,6 @@ jobs:
         file: doublecmd-release/doublecmd*.7z
         release_name: Revision ${{ env.REVISION }}
         tag: ${{ env.REVISION }}
+        body: ${{ env.BODY }}
         overwrite: true
         file_glob: true
-        body: |
-          **These snapshots are generated automatically and are untested.**
-          
-          **Linux (repositories)**
-          [doublecmd-qt-latest](https://software.opensuse.org//download.html?project=home%3AAlexx2000%3Adoublecmd-svn&package=doublecmd-qt)
-          [doublecmd-gtk-latest](https://software.opensuse.org//download.html?project=home%3AAlexx2000%3Adoublecmd-svn&package=doublecmd-gtk)
-          
-          **Linux 64 bit (AppImage)**
-          [doublecmd-qt-latest-x86_64.AppImage](https://download.opensuse.org/repositories/home:/Alexx2000:/doublecmd-svn/AppImage/doublecmd-qt-latest-x86_64.AppImage)          
-          [doublecmd-gtk-latest-x86_64.AppImage](https://download.opensuse.org/repositories/home:/Alexx2000:/doublecmd-svn/AppImage/doublecmd-gtk-latest-x86_64.AppImage)
-
-          **Microsoft Windows 32/64 bit  macOS >= 11**
-
