@@ -29,6 +29,11 @@ env:
 
     **Microsoft Windows 32/64 bit  macOS >= 11**  
 
+    | First Header  | Second Header |
+    | ------------- | ------------- |
+    | Content Cell  | Content Cell  |
+    | Content Cell  | Content Cell  |
+
 jobs:
   build-win:
     runs-on: windows-latest
@@ -61,3 +66,4 @@ jobs:
         body: ${{ env.BODY }}
         overwrite: true
         file_glob: true
+
