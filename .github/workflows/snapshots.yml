@@ -16,50 +16,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-mac:
-    runs-on: macos-14
-    steps:
-    - name: Install Free Pascal
-      uses: doublecmd/lazarus-install@mac
-      with:
-        lazarus-version: "stable"
-
-    - name: Get Lazarus source
-      uses: actions/checkout@v6
-      with:
-            repository: 'fpc/Lazarus'
-
-    - name: Build and install Lazarus
-      run: |
-           make all
-           sudo make install
-
-    - name: Create Lazarus config
-      run: |
-           sudo mkdir -p /etc/lazarus
-           sudo cp tools/install/macosx/environmentoptions.xml /etc/lazarus/environmentoptions.xml
-           sudo sed -i -e "s|_PPCARCH_|fpc|g; s|/Developer/lazarus|/usr/local/share/lazarus|g" /etc/lazarus/environmentoptions.xml
-
-    - name: Checkout source
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-
-    - name: Prepare source
-      run: sed -i -e "s|BOX_CLIENT_SECRET = '\*'|BOX_CLIENT_SECRET = '$BOX_CLIENT_SECRET'|g" plugins/wfx/MacCloud/src/drivers/oauth2/box/uboxclient.pas
-      env:
-        BOX_CLIENT_SECRET: ${{ secrets.BOX_CLIENT_SECRET }}
-
-    - name: Build packages
-      run: ./.github/scripts/create_snapshot.sh
-
-    - name: Deploy to snapshot server
-      run: ./.github/scripts/upload_snapshot.sh
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
-        REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-        REMOTE_USER: ${{ secrets.REMOTE_USER }}
-
   build-win:
     runs-on: windows-latest
     steps:
@@ -76,10 +32,19 @@ jobs:
     - name: Build packages
       run: ./.github/scripts/create_snapshot.bat
 
-    - name: Deploy to snapshot server
-      run: ./.github/scripts/upload_snapshot.sh
-      shell: bash
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
-        REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-        REMOTE_USER: ${{ secrets.REMOTE_USER }}
+    - name: Save revision number
+      run: echo "REVISION=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
+      shell: bash 
+
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_name: alexx2000/snapshots
+        repo_token: ${{ secrets.SNAPSHOTS }}
+        file: doublecmd-release/doublecmd*.dmg
+        release_name: Revision ${{ env.REVISION }}
+        tag: ${{ env.REVISION }}
+        overwrite: true
+        file_glob: true
+        body: "Go to the [Double Commander download page](https://sourceforge.net/p/doublecmd/wiki/Download) to download the latest release."
+
