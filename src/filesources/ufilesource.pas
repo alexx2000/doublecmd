@@ -56,6 +56,7 @@ type
     col: Integer;
     row: Integer;
     drawingRect: TRect;
+    decorationRect: TRect;
 
     case Byte of
       0: (
@@ -71,7 +72,7 @@ type
 
   TFileSourceUIHandler = class
     procedure draw( var params: TFileSourceUIParams ); virtual; abstract;
-    function click( var  params: TFileSourceUIParams ): Boolean; virtual; abstract;
+    function click( var params: TFileSourceUIParams ): Boolean; virtual; abstract;
   end;
 
   TFileSourceField = record
@@ -180,7 +181,10 @@ type
     function GetRootDir(sPath : String): String; overload;
     function GetRootDir: String; overload;
     function GetPathType(sPath : String): TPathType;
-    function GetCustomIcon(aFile: TFile; AIconSize: Integer; out AIcon: TBitmap): IntPtr;
+
+    function GetCustomIcon(aFile: TFile; AIconSize: Integer; out AIcon: TBitmap): IntPtr; overload;
+    function GetCustomIcon(const path: String; const iconSize: Integer): TBitmap; overload;
+
     function GetFreeSpace(Path: String; out FreeSize, TotalSize : Int64) : Boolean;
     function GetRealPath(const path: String): String;
     function GetLocalName(var aFile: TFile): Boolean;
@@ -382,7 +386,10 @@ type
 
     function CreateDirectory(const Path: String): Boolean; virtual;
     function FileSystemEntryExists(const Path: String): Boolean; virtual;
-    function GetCustomIcon(aFile: TFile; AIconSize: Integer; out AIcon: TBitmap): PtrInt; virtual;
+
+    function GetCustomIcon(aFile: TFile; AIconSize: Integer; out AIcon: TBitmap): PtrInt; virtual; overload;
+    function GetCustomIcon(const path: String; const iconSize: Integer): TBitmap; virtual; overload;
+
     function GetFreeSpace(Path: String; out FreeSize, TotalSize : Int64) : Boolean; virtual;
     function QueryContextMenu(AFiles: TFiles; var AMenu: TPopupMenu): Boolean; virtual;
     function GetDefaultView(out DefaultView: TFileSourceFields): Boolean; virtual;
@@ -709,6 +716,11 @@ function TFileSource.GetCustomIcon(aFile: TFile; AIconSize: Integer; out
 begin
   AIcon:= nil;
   Result:= -1;
+end;
+
+function TFileSource.GetCustomIcon(const path: String; const iconSize: Integer): TBitmap;
+begin
+  Result:= nil;
 end;
 
 function TFileSource.GetFreeSpace(Path: String; out FreeSize, TotalSize : Int64) : Boolean;

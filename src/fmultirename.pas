@@ -2171,8 +2171,8 @@ begin
   end
   else
   begin
-    edFind.Color := clWindow;
-    edFind.Font.Color := clWindowText;
+    edFind.Color := clDefault;
+    edFind.Font.Color := clDefault;
   end;
 end;
 
@@ -2381,7 +2381,7 @@ end;
 procedure TfrmMultiRename.cm_LoadNamesFromFile(const {%H-}Params: array of string);
 begin
   dmComData.OpenDialog.FileName := EmptyStr;
-  dmComData.OpenDialog.Filter := AllFilesMask;
+  dmComData.OpenDialog.Filter := EmptyStr;
   if dmComData.OpenDialog.Execute then
     LoadNamesFromFile(dmComData.OpenDialog.FileName);
 end;

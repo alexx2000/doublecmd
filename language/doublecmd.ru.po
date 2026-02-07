@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Double Commander 1.2.0 alpha\n"
-"POT-Creation-Date: 2025-07-14 19:30+0300\n"
-"PO-Revision-Date: 2025-07-14 21:33+0300\n"
+"Project-Id-Version: Double Commander 1.3.0 alpha\n"
+"POT-Creation-Date: 2026-01-15 09:30+0300\n"
+"PO-Revision-Date: 2026-01-15 19:30+0300\n"
 "Last-Translator: Alexander Koblov <alexx2000@mail.ru>\n"
 "Language-Team: \n"
 "Language: ru\n"
@@ -520,23 +520,23 @@ msgstr "Отмена"
 
 #: tfrmdiffer.actcopylefttoright.caption
 msgctxt "TFRMDIFFER.ACTCOPYLEFTTORIGHT.CAPTION"
-msgid "Copy Block Right"
+msgid "Copy Block To Right"
 msgstr "Копировать блок направо"
 
 #: tfrmdiffer.actcopylefttoright.hint
 msgctxt "TFRMDIFFER.ACTCOPYLEFTTORIGHT.HINT"
-msgid "Copy Block Right"
-msgstr "Копировать блок направо"
+msgid "Copy Block From Left To Right"
+msgstr "Копировать блок слева направо"
 
 #: tfrmdiffer.actcopyrighttoleft.caption
 msgctxt "TFRMDIFFER.ACTCOPYRIGHTTOLEFT.CAPTION"
-msgid "Copy Block Left"
+msgid "Copy Block To Left"
 msgstr "Копировать блок налево"
 
 #: tfrmdiffer.actcopyrighttoleft.hint
 msgctxt "TFRMDIFFER.ACTCOPYRIGHTTOLEFT.HINT"
-msgid "Copy Block Left"
-msgstr "Копировать блок налево"
+msgid "Copy Block From Right To Left"
+msgstr "Копировать блок справа налево"
 
 #: tfrmdiffer.acteditcopy.caption
 msgctxt "TFRMDIFFER.ACTEDITCOPY.CAPTION"
@@ -10621,7 +10621,7 @@ msgstr "Найти..."
 
 #: ulng.rseditsearchfrw
 msgid "&Forward"
-msgstr "&Вперед"
+msgstr "&Вперёд"
 
 #: ulng.rseditsearchreplace
 msgctxt "ulng.rseditsearchreplace"
@@ -11108,6 +11108,20 @@ msgstr "Список окон \"Поиск файлов\""
 msgid "Assign tags to %d items"
 msgstr "Добавить теги выделенному (%d)"
 
+#: ulng.rsmacosconnectserverprompt
+msgid ""
+"URL:\n"
+"(eg. smb://server/share; https://dav.server.com; nfs://server/path)\n"
+" "
+msgstr ""
+"URL:\n"
+"(например, smb://server/share; https://dav.server.com; nfs://server/path)\n"
+" "
+
+#: ulng.rsmacosconnectservertitle
+msgid "SMB / Samba / WebDAV / NFS ..."
+msgstr "SMB / Samba / WebDAV / NFS ..."
+
 #: ulng.rsmarkminus
 msgid "Unselect mask"
 msgstr "Снять выделение по маске"
@@ -11222,6 +11236,26 @@ msgstr "Открыть в Finder"
 #: ulng.rsmfstbifinderrevealtitle
 msgid "Finder"
 msgstr "Finder"
+
+#: ulng.rsmfstbigobackwardtips
+msgctxt "ulng.rsmfstbigobackwardtips"
+msgid "Backward"
+msgstr "Назад"
+
+#: ulng.rsmfstbigobackwardtitle
+msgctxt "ulng.rsmfstbigobackwardtitle"
+msgid "Backward"
+msgstr "Назад"
+
+#: ulng.rsmfstbigoforwardtips
+msgctxt "ulng.rsmfstbigoforwardtips"
+msgid "Forward"
+msgstr "Вперёд"
+
+#: ulng.rsmfstbigoforwardtitle
+msgctxt "ulng.rsmfstbigoforwardtitle"
+msgid "Forward"
+msgstr "Вперёд"
 
 #: ulng.rsmfstbigotips
 msgctxt "ulng.rsmfstbigotips"

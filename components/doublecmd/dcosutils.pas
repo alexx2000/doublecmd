@@ -57,6 +57,8 @@ const
   ERROR_NOT_SAME_DEVICE = Windows.ERROR_NOT_SAME_DEVICE;
 {$ENDIF}
 
+  FileNameNormalized = {$IFDEF DARWIN}True{$ELSE}False{$ENDIF};
+
 type
   TFileMapRec = record
     FileHandle : System.THandle;
@@ -885,7 +887,7 @@ begin
   if (Mode and fmOpenNoATime <> 0) then
   begin
     if (Result <> feInvalidHandle) then
-      SetFileTime(Result, nil, @ft, @ft)
+      SetFileTime(Result, nil, @ft, nil)
     else if GetLastError = ERROR_ACCESS_DENIED then
       Result := mbFileOpen(FileName, Mode and not fmOpenNoATime);
   end;

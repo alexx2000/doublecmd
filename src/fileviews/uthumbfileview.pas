@@ -6,7 +6,11 @@ interface
 
 uses
   Classes, SysUtils, Controls, Grids, Types, DCXmlConfig, uFileSource, uOrderedFileView,
-  uDisplayFile, uFileViewWorker, uThumbnails, uFileView, uTypes, uFileViewWithGrid,
+  uDisplayFile, uFileViewWorker, uThumbnails, uFileView, uTypes,
+  uFileViewWithMainCtrl, uFileViewWithGrid,
+{$IFDEF DARWIN}
+  uDarwinFileView,
+{$ENDIF}
   uFileProperty, uFile;
 
 type
@@ -58,6 +62,7 @@ type
     FUpdateColCount: Integer;
   protected
     procedure KeyDown(var Key : Word; Shift : TShiftState); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure DragOver(Source: TObject; X,Y: Integer; State: TDragState; var Accept: Boolean); override;
@@ -71,6 +76,8 @@ type
     function  CellToIndex(ACol, ARow: Integer): Integer; override;
     procedure IndexToCell(Index: Integer; out ACol, ARow: Integer); override;
     procedure DrawCell(aCol, aRow: Integer; aRect: TRect; aState: TGridDrawState); override;
+
+    function ConvertToDecorationRect(const drawingRect: TRect): TRect; override;
   end;
 
 
@@ -252,6 +259,14 @@ begin
     if FileIndex <> InvalidFileIndex then
       FThumbView.Selection(SavedKey, FileIndex);
   end;
+end;
+
+procedure TThumbDrawGrid.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
+  Y: Integer);
+begin
+  if Button = mbLeft then
+    self.doCellClick( Shift, X, Y );
+  inherited MouseUp(Button, Shift, X, Y);
 end;
 
 procedure TThumbDrawGrid.MouseMove(Shift: TShiftState; X, Y: Integer);
@@ -462,12 +477,13 @@ var
   //shared variables
   AFile: TDisplayFile;
   FileSourceDirectAccess: Boolean;
+  params: TFileSourceUIParams;
 
   //------------------------------------------------------
   //begin subprocedures
   //------------------------------------------------------
 
-  procedure DrawIconCell(aRect: TRect);
+  procedure DrawIconCell;
   var
     factor: Double;
     IconRect: TRect;
@@ -478,9 +494,31 @@ var
     s: string;
     IconID: PtrInt;
     Bitmap: TBitmap;
+    aRect: TRect;
+
+    procedure zoomInSmallPreview( var width: Integer; var height: Integer );
+    begin
+      // if the thumbnail grid cell is already small, don't zoom in
+      if (gThumbSize.Width<gIconsSize) or (gThumbSize.Height<gIconsSize) then
+        Exit;
+
+      // if the generated preview is large enough, don't zoom in
+      if (width>=gIconsSize) or (height>=gIconsSize) then
+        Exit;
+
+      if width >= height then begin
+        height:= Round( Double(height) / Double(width) * Double(gIconsSize) );
+        width:= gIconsSize;
+      end else begin
+        width:= Round( Double(width) / Double(height) * Double(gIconsSize) );
+        height:= gIconsSize;
+      end;
+    end;
+
   begin
     factor:= self.GetCanvasScaleFactor;
-    iTextTop := aRect.Bottom - Canvas.TextHeight('Wg');
+    aRect:= params.drawingRect;
+    iTextTop:= aRect.Bottom - self.calcTextHeight;
 
     IconID := AFile.Tag;
 
@@ -490,6 +528,7 @@ var
         Bitmap:= FThumbView.FBitmapList[IconID];
         IconWidth:= Round(Bitmap.Width / factor);
         IconHeight:= Round(Bitmap.Height / factor);
+        zoomInSmallPreview(IconWidth, IconHeight);
         IconRect.Left:= aRect.Left + (aRect.Right - aRect.Left - IconWidth) div 2;
         IconRect.Top:= aRect.Top + (iTextTop - aRect.Top - IconHeight) div 2;
         IconRect.Width:= IconWidth;
@@ -536,16 +575,28 @@ begin
     begin
       AFile:= FThumbView.FFiles[Idx];
       FileSourceDirectAccess:= fspDirectAccess in FFileView.FileSource.Properties;
+
+      params:= Default( TFileSourceUIParams );
+      params.col:= aCol;
+      params.row:= aRow;
+      params.displayFile:= aFile;
+      params.focused:= (gdSelected in aState) and FThumbView.Active;
+
       if AFile.DisplayStrings.Count = 0 then
         FThumbView.MakeColumnsStrings(AFile);
 
       PrepareColors(AFile, aCol, aRow, aRect, aState);
 
-      if gUseFrameCursor then
-        DrawIconCell(Rect(aRect.Left + gBorderFrameWidth - 1, aRect.Top + gBorderFrameWidth - 1,
-                          aRect.Right - gBorderFrameWidth + 1, aRect.Bottom - gBorderFrameWidth + 1))
-      else
-        DrawIconCell(aRect);
+      if gUseFrameCursor then begin
+        params.drawingRect:=
+           Rect(aRect.Left + gBorderFrameWidth - 1, aRect.Top + gBorderFrameWidth - 1,
+                aRect.Right - gBorderFrameWidth + 1, aRect.Bottom - gBorderFrameWidth + 1);
+      end else begin
+        params.drawingRect:= aRect;
+      end;
+
+      DrawIconCell;
+      self.doCellEnhancedDraw( params );
     end
   else
     begin
@@ -556,6 +607,16 @@ begin
 
   DrawCellGrid(aCol, aRow, aRect, aState);
   DrawLines(Idx, aCol, aRow, aRect, aState);
+end;
+
+function TThumbDrawGrid.ConvertToDecorationRect(const drawingRect: TRect): TRect;
+var
+  iTextTop: Integer;
+begin
+  iTextTop:= drawingRect.Bottom - self.calcTextHeight;
+  Result:= drawingRect;
+  Result.Bottom:= iTextTop - 1;
+  Result.Top:= iTextTop - 24;
 end;
 
 { TThumbFileView }
@@ -610,6 +671,10 @@ begin
   tmMouseScroll.Interval := 200;
   FBitmapList:= TBitmapList.Create(True);
   FThumbnailManager:= TThumbnailManager.Create(self, gColors.FilePanel^.BackColor);
+
+  {$IFDEF DARWIN}
+  TThumbDrawGrid(dgPanel).OnDrawCell:= @darwinFileViewDrawHandler.onDrawCell;
+  {$ENDIF}
 end;
 
 procedure TThumbFileView.AfterChangePath;
@@ -735,7 +800,7 @@ begin
   inherited UpdateRenameFileEditPosition;
 
   ARect := dgPanel.CellRect(dgPanel.Col, dgPanel.Row);
-  ARect.Top := ARect.Bottom - dgPanel.Canvas.TextHeight('Wg') - 4;
+  ARect.Top := ARect.Bottom - dgPanel.calcTextHeight - 4;
 
   if gInplaceRenameButton and (ARect.Right + edtRename.ButtonWidth < dgPanel.ClientWidth) then
     Inc(ARect.Right, edtRename.ButtonWidth);

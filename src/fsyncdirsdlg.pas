@@ -239,7 +239,7 @@ uses
   uFileSystemFileSource, uFileSourceOperationOptions, DCDateTimeUtils, SyncObjs,
   uDCUtils, uFileSourceUtil, uFileSourceOperationTypes, uShowForm, uAdministrator,
   uOSUtils, uLng, uMasks, Math, uClipboard, IntegerList, fMaskInputDlg, uSearchTemplate,
-  SysConst, DCStrUtils, uTypes, uFileSystemDeleteOperation, uFindFiles;
+  LCLVersion, SysConst, DCStrUtils, uTypes, uFileSystemDeleteOperation, uFindFiles;
 
 {$R *.lfm}
 
@@ -591,7 +591,7 @@ var
   bTemplate: Boolean;
 begin
   sMask:= cbExtFilter.Text;
-  if ShowMaskInputDlg(rsMarkPlus, rsMaskInput, glsMaskHistory, sMask) then
+  if ShowMaskInputDlg(rsMarkPlus, rsMaskInput, glsSyncMaskHistory, sMask) then
   begin
     bTemplate:= IsMaskSearchTemplate(sMask);
     cbExtFilter.Enabled:= not bTemplate;
@@ -894,7 +894,7 @@ begin
   end;
   if chkByContent.Enabled then
     gSyncDirsByContent          := chkByContent.Checked;
-  glsMaskHistory.Assign(cbExtFilter.Items);
+  glsSyncMaskHistory.Assign(cbExtFilter.Items);
 
   with HeaderDG.Columns do
   begin
@@ -955,13 +955,13 @@ begin
   sbSingles.Down         := gSyncDirsShowFilterSingles;
   if gSyncDirsFileMaskSave = False then
   begin
-    Index := glsMaskHistory.IndexOf(gSyncDirsFileMask);
+    Index := glsSyncMaskHistory.IndexOf(gSyncDirsFileMask);
     if Index <> -1 then
-      glsMaskHistory.Move(Index, 0)
+      glsSyncMaskHistory.Move(Index, 0)
     else
-      glsMaskHistory.Insert(0, gSyncDirsFileMask);
+      glsSyncMaskHistory.Insert(0, gSyncDirsFileMask);
   end;
-  cbExtFilter.Items.Assign(glsMaskHistory);
+  cbExtFilter.Items.Assign(glsSyncMaskHistory);
   cbExtFilter.Text       := gSyncDirsFileMask;
 
   HMSync := HotMan.Register(Self, HotkeysCategory);
@@ -2046,10 +2046,18 @@ begin
   FFileSourceR := FileView2.FileSource;
   FAddressL := FileView1.CurrentAddress;
   FAddressR := FileView2.CurrentAddress;
-  with FileView1 do
+  with FileView1 do begin
     edPath1.Text := FAddressL + CurrentPath;
-  with FileView2 do
+{$if lcl_fullversion >= 4990000}
+    edPath1.DialogOptionsEx:= [ofShowsFilePackagesSwitch];
+{$endif}
+  end;
+  with FileView2 do begin
     edPath2.Text := FAddressR + CurrentPath;
+{$if lcl_fullversion >= 4990000}
+    edPath2.DialogOptionsEx:= [ofShowsFilePackagesSwitch];
+{$endif}
+  end;
   RecalcHeaderCols;
   MainDrawGrid.DoubleBuffered := True;
   MainDrawGrid.Font.Bold := True;

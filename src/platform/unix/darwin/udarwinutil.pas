@@ -7,6 +7,7 @@ interface
 
 uses
   Classes, SysUtils,
+  uLog,
   MacOSAll, CocoaAll, CocoaUtils;
 
 // Darwin Util Function
@@ -15,6 +16,8 @@ function StringToCFStringRef(const S: String): CFStringRef;
 function NSArrayToList(const theArray:NSArray): TStringList;
 function ListToNSArray(const list:TStrings): NSArray;
 function ListToNSUrlArray(const list:TStrings): NSArray;
+procedure logDarwinError(const tag: String; const error: NSError);
+procedure logDarwinException(const tag: String; const e: Exception);
 
 implementation
 
@@ -65,6 +68,17 @@ begin
     theArray.addObject( url );
   end;
   Result:= theArray;
+end;
+
+procedure logDarwinError(const tag: String; const error: NSError);
+begin
+  if error <> nil then
+    LogWrite( tag + ': ' + error.description.utf8String, lmtError );
+end;
+
+procedure logDarwinException(const tag: String; const e: Exception);
+begin
+  LogWrite( tag + ': ' + e.ToString, lmtError );
 end;
 
 function CFStringToStr(AString: CFStringRef): String;

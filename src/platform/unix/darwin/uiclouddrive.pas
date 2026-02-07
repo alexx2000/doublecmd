@@ -7,15 +7,15 @@ interface
 
 uses
   Classes, SysUtils, syncobjs, fgl, LazMethodList,
-  Menus, Forms, Dialogs, System.UITypes,
+  Graphics, Menus, Forms, Dialogs, System.UITypes,
   uiCloudDriveConfig, uiCloudDriveUtil,
   uFile, uDisplayFile,
   uFileSource, uFileSourceOperationTypes, uFileSourceManager,
   uFileSourceWatcher, uMountedFileSource, uVfsModule,
-  uDCUtils, uLng, uGlobs,
+  uDCUtils, uLng,
   uDarwinFSWatch, uDarwinSimpleFSWatch, uDarwinDC,
-  uDarwinFile, uDarwinImage,
-  CocoaAll, CocoaUtils, CocoaThemes;
+  uDarwinFile, uDarwinImage, uDarwinUtil,
+  CocoaAll, CocoaUtils;
 
 type
 
@@ -42,6 +42,7 @@ type
     function GetWatcher: TFileSourceWatcher; override;
     function GetProcessor: TFileSourceProcessor; override;
     function GetUIHandler: TFileSourceUIHandler; override;
+    function GetCustomIcon(const path: String; const iconSize: Integer): TBitmap; override;
     class function GetMainIcon(out Path: String): Boolean; override;
 
     function GetRootDir(sPath : String): String; override;
@@ -49,6 +50,8 @@ type
     function IsPathAtRoot(Path: String): Boolean; override;
     function GetDisplayFileName(aFile: TFile): String; override;
     function QueryContextMenu(AFiles: TFiles; var AMenu: TPopupMenu): Boolean; override;
+
+    procedure AddSearchPath( const startPath: String; paths: TStringList); override;
   end;
 
 implementation
@@ -78,6 +81,7 @@ type
   private
     procedure createWatcher;
     procedure destroyWatcher;
+    procedure tryDestroyWatcher( data: PtrInt );
     function findWatch(const path: String; const event: TFSWatcherEvent): Integer;
   private
     function toFileSourceEvent( event: TDarwinFSWatchEvent;
@@ -103,16 +107,8 @@ type
 
   { TiCloudDriveUIHandler }
 
-  TiCloudDriveUIHandler = class( TFileSourceUIHandler, ICocoaThemeObserver )
-  private
-    _downloadImage: NSImage;
-  private
-    procedure createImages;
-    procedure releaseImages;
-    procedure onThemeChanged;
+  TiCloudDriveUIHandler = class( TFileSourceUIHandler )
   public
-    constructor Create;
-    destructor Destroy; override;
     procedure draw( var params: TFileSourceUIParams ); override;
     function click( var params: TFileSourceUIParams): Boolean; override;
   end;
@@ -197,6 +193,17 @@ begin
 
   _watcher.stop();
   FreeAndNil( _watcher );
+end;
+
+procedure TiCloudDriveWatcher.tryDestroyWatcher( data: PtrInt );
+begin
+  _lockObject.Acquire;
+  try
+    if _watcherItems.Count = 0 then
+      destroyWatcher;
+  finally
+    _lockObject.Release;
+  end;
 end;
 
 function TiCloudDriveWatcher.findWatch(const path: String; const event: TFSWatcherEvent): Integer;
@@ -311,7 +318,7 @@ begin
 
     _watcherItems.Delete( index );
     if _watcherItems.count = 0 then
-      destroyWatcher;
+      Application.QueueAsyncCall( @tryDestroyWatcher, PtrInt(self) );
   finally
     _lockObject.Release;
   end;
@@ -325,6 +332,7 @@ end;
 
 destructor TiCloudDriveWatcher.Destroy;
 begin
+  application.RemoveAsyncCalls( self );
   destroyWatcher;
   FreeAndNil( _watcherItems );
   FreeAndNil( _lockObject );
@@ -337,10 +345,16 @@ var
   manager: NSFileManager;
   files: NSArray;
   name: NSString;
+  error: NSError = nil;
 begin
   manager:= NSFileManager.defaultManager;
   files:= manager.contentsOfDirectoryAtPath_error(
-    path, nil );
+    path, @error );
+  if files = nil then begin
+    logDarwinError( 'TSeedFileUtil.doDownloadDirectory', error );
+    Exit;
+  end;
+
   for name in files do begin
     doDownload( path.stringByAppendingPathComponent(name) );
   end;
@@ -351,6 +365,8 @@ var
   manager: NSFileManager;
   isDirectory: ObjCBOOL;
   url: NSURL;
+  error: NSError = nil;
+  ok: Boolean;
 begin
   manager:= NSFileManager.defaultManager;
   manager.fileExistsAtPath_isDirectory( path, @isDirectory );
@@ -358,7 +374,9 @@ begin
     doDownloadDirectory( path );
   end else begin
     url:= NSUrl.fileURLWithPath( path );
-    manager.startDownloadingUbiquitousItemAtURL_error( url, nil );
+    ok:= manager.startDownloadingUbiquitousItemAtURL_error( url, @error );
+    if NOT ok then
+      logDarwinError( 'TSeedFileUtil.doDownload', error );
   end;
 end;
 
@@ -366,7 +384,7 @@ class procedure TSeedFileUtil.download(const aFile: TFile);
 var
   path: NSString;
 begin
-  path:= StrToNSString( aFile.FullPath );
+  path:= StringToNSString( aFile.FullPath );
   doDownload( path );
 end;
 
@@ -374,10 +392,14 @@ class procedure TSeedFileUtil.evict(const aFile: TFile);
 var
   url: NSUrl;
   manager: NSFileManager;
+  error: NSError = nil;
+  ok: Boolean;
 begin
   url:= NSUrl.fileURLWithPath( StrToNSString(aFile.FullPath) );
   manager:= NSFileManager.defaultManager;
-  manager.evictUbiquitousItemAtURL_error( url, nil );
+  ok:= manager.evictUbiquitousItemAtURL_error( url, @error );
+  if NOT ok then
+    logDarwinError( 'TSeedFileUtil.evict', error );
 end;
 
 class function TSeedFileUtil.isSeedFile(const aFile: TFile): Boolean;
@@ -483,46 +505,6 @@ end;
 
 { TiCloudDriveUIHandler }
 
-procedure TiCloudDriveUIHandler.createImages;
-var
-  tempImage: NSImage;
-begin
-  _downloadImage.release;
-  tempImage:= NSImage.alloc.initWithContentsOfFile( StrToNSString(mbExpandFileName(iCloudDriveConfig.icon.download)) );
-  tempImage.setSize( NSMakeSize(16,16) );
-  if TCocoaThemeServices.isDark then begin
-    _downloadImage:= TDarwinImageUtil.invertColor( tempImage );
-  end else begin
-    _downloadImage:= tempImage;
-  end;
-  _downloadImage.retain;
-  tempImage.release;
-end;
-
-procedure TiCloudDriveUIHandler.releaseImages;
-begin
-  _downloadImage.release;
-  _downloadImage:= nil;
-end;
-
-procedure TiCloudDriveUIHandler.onThemeChanged;
-begin
-  self.releaseImages;
-end;
-
-constructor TiCloudDriveUIHandler.Create;
-begin
-  Inherited;
-  TCocoaThemeServices.addObserver( self );
-end;
-
-destructor TiCloudDriveUIHandler.Destroy;
-begin
-  TCocoaThemeServices.removeObserver( self );
-  self.releaseImages;
-  Inherited;
-end;
-
 procedure TiCloudDriveUIHandler.draw( var params: TFileSourceUIParams );
 var
   graphicsContext: NSGraphicsContext;
@@ -533,6 +515,9 @@ var
     destRect: NSRect;
     fs: TiCloudDriveFileSource;
   begin
+    if params.iconRect.IsEmpty then
+      Exit;
+
     fs:= params.fs as TiCloudDriveFileSource;
     image:= fs.getAppIconByPath( params.displayFile.FSFile.FullPath );
     if image = nil then
@@ -554,19 +539,22 @@ var
   procedure drawDownloadIcon;
   var
     destRect: NSRect;
+    icon: NSImage;
   begin
     if NOT TSeedFileUtil.isSeedFile(params.displayFile.FSFile) then
       Exit;
 
-    if _downloadImage = nil then
-      createImages;
+    icon:= darwinImageCacheForPath.getNSImageForFileContent(
+      mbExpandFileName(iCloudDriveConfig.icon.download),
+      16,
+      True );
 
-    destRect.size:= _downloadImage.size;
-    destRect.origin.x:= params.drawingRect.Right - Round(_downloadImage.size.width) - 8;
-    destRect.origin.y:= params.drawingRect.Top + (params.drawingRect.Height-Round(_downloadImage.size.height))/2;
-    params.drawingRect.Right:= Round(destRect.origin.x) - 4;
+    destRect.size:= icon.size;
+    destRect.origin.x:= params.decorationRect.Right - Round(icon.size.width) - 8;
+    destRect.origin.y:= params.decorationRect.Top + (params.decorationRect.Height-Round(icon.size.height))/2;
+    params.decorationRect.Right:= Round(destRect.origin.x) - 4;
 
-    _downloadImage.drawInRect_fromRect_operation_fraction_respectFlipped_hints(
+    icon.drawInRect_fromRect_operation_fraction_respectFlipped_hints(
       destRect,
       NSZeroRect,
       NSCompositeSourceOver,
@@ -606,7 +594,11 @@ begin
   if NOT TSeedFileUtil.isSeedFile(aFile) then
     Exit;
 
-  if params.x < params.drawingRect.Right - 28 then
+  if params.x < params.decorationRect.Right - 28 then
+    Exit;
+  if params.y < params.decorationRect.Top then
+    Exit;
+  if params.y > params.decorationRect.Bottom then
     Exit;
 
   TSeedFileUtil.downloadOrEvict( params.fs, aFile );
@@ -677,9 +669,29 @@ begin
   Result:= iCloudDriveUIProcessor;
 end;
 
+function TiCloudDriveFileSource.GetCustomIcon(
+  const path: String;
+  const iconSize: Integer ): TBitmap;
+var
+  realPath: String;
+  iconPath: String;
+  image: NSImage;
+begin
+  Result:= nil;
+  if path = GetRootDir(path) then begin
+    TiCloudDriveFileSource.GetMainIcon( iconPath );
+    Result:= darwinImageCacheForPath.copyBitmapForFileContent( iconPath, iconSize );
+  end else begin
+    realPath:= self.GetRealPath( path );
+    image:= getAppIconByPath( realPath );
+    if image <> nil then
+      Result:= darwinImageCacheForPath.copyBitmapForNSImage( realPath, image );
+  end;
+end;
+
 class function TiCloudDriveFileSource.GetMainIcon(out Path: String): Boolean;
 begin
-  Path:= iCloudDriveConfig.icon.main;
+  Path:= mbExpandFileName( iCloudDriveConfig.icon.main );
   Result:= True;
 end;
 
@@ -781,6 +793,22 @@ begin
   AMenu.Items.Insert(1, menuItem);
 
   Result:= True;
+end;
+
+procedure TiCloudDriveFileSource.AddSearchPath( const startPath: String; paths: TStringList );
+var
+  iCloudDrivePath: String;
+  iCloudBasePath: String;
+begin
+  if paths.Count > 0 then
+    Exit;
+
+  iCloudDrivePath:= uDCUtils.ReplaceTilde( iCloudDriveConfig.path.drive );
+  if ExcludeTrailingPathDelimiter(startPath) <> iCloudDrivePath then
+    Exit;
+
+  iCloudBasePath:= uDCUtils.ReplaceTilde( iCloudDriveConfig.path.base );
+  paths.Add( iCloudBasePath );
 end;
 
 initialization

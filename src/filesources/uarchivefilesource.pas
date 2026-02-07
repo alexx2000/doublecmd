@@ -5,12 +5,16 @@ unit uArchiveFileSource;
 interface
 
 uses
-  Classes, SysUtils,
+  Classes, SysUtils, Graphics,
   DCOSUtils,
   uLocalFileSource,
   uFileSource,
   uFile,
-  uFileProperty;
+  uFileProperty
+  {$IFDEF DARWIN}
+  ,uDarwinImage
+  {$ENDIF}
+  ;
 
 type
 
@@ -54,6 +58,8 @@ type
 
     class function CreateFile(const APath: String): TFile; override;
 
+    function GetCustomIcon(const path: String; const iconSize: Integer): TBitmap; override;
+
     function Changed: Boolean;
 
     property ArchiveFileName: String read GetCurrentAddress;
@@ -81,6 +87,18 @@ begin
     AttributesProperty := TFileAttributesProperty.CreateOSAttributes;
     ModificationTimeProperty := TFileModificationDateTimeProperty.Create;
   end;
+end;
+
+
+function TArchiveFileSource.GetCustomIcon(const path: String;
+  const iconSize: Integer): TBitmap;
+begin
+  Result:= nil;
+
+  {$IFDEF DARWIN}
+  if path = PathDelim then
+    Result:= darwinImageCacheForExt.copyBitmapForFileExt( FCurrentAddress, iconSize );
+  {$ENDIF}
 end;
 
 function TArchiveFileSource.Changed: Boolean;

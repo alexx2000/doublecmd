@@ -248,10 +248,14 @@ implementation
 {$R *.lfm}
 
 uses
-  Clipbrd, dmCommonData, dmHigh, SynEditTypes, LCLType, LConvEncoding,
+  Clipbrd, Dialogs, dmCommonData, dmHigh, SynEditTypes, LCLType, LConvEncoding,
   uLng, uShowMsg, uGlobs, fOptions, DCClassesUtf8, uAdministrator, uHighlighters,
   uOSUtils, uConvEncoding, fOptionsToolsEditor, uDCUtils, uClipboard, uFindFiles,
-  DCOSUtils;
+  DCOSUtils
+{$IFDEF DARWIN}
+  , uDarwinApplication, uEarlyConfig
+{$ENDIF}
+  ;
 
 procedure ShowEditor(const sFileName: String; WaitData: TWaitData = nil);
 var
@@ -286,7 +290,8 @@ var
 begin
   InitPropStorage(Self);
 
-  Menu.Images:= dmComData.ilEditorImages;
+  if gIconsInMenus then
+    Menu.Images:= dmComData.ilEditorImages;
   StatusBar.OnShowHint:= @StatusBarShowHint;
 
   LoadGlobalOptions;
@@ -642,6 +647,10 @@ begin
   tbToolBar.ImagesWidth:= gToolIconsSize;
   tbToolBar.SetButtonSize(gToolIconsSize + ScaleX(6, 96),
                           gToolIconsSize + ScaleY(6, 96));
+{$IFDEF DARWIN}
+  if gModernUI and TDarwinApplicationUtil.supportsModernForm then
+    tbToolBar.Hide;
+{$ENDIF}
 end;
 
 procedure TfrmEditor.EditorReplaceText(Sender: TObject; const ASearch,
@@ -1031,7 +1040,10 @@ var
 begin
   FormCloseQuery(Self, CanClose);
   if not CanClose then Exit;
-  dmComData.OpenDialog.Filter:= AllFilesMask;
+  dmComData.OpenDialog.Filter:= EmptyStr;
+{$if lcl_fullversion >= 4990000}
+  dmComData.OpenDialog.OptionsEx:= [ofAllowsFilePackagesContents];
+{$endif}
   if not dmComData.OpenDialog.Execute then Exit;
   if OpenFile(dmComData.OpenDialog.FileName) then
     UpdateStatus;
@@ -1059,7 +1071,10 @@ var
   Highlighter: TSynCustomHighlighter;
 begin
   dmComData.SaveDialog.FileName := FileName;
-  dmComData.SaveDialog.Filter:= AllFilesMask; // rewrite for highlighter
+  dmComData.SaveDialog.Filter:= EmptyStr; // rewrite for highlighter
+{$if lcl_fullversion >= 4990000}
+  dmComData.SaveDialog.OptionsEx:= [ofAllowsFilePackagesContents];
+{$endif}
   if not dmComData.SaveDialog.Execute then
     Exit;
 

@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Controls, Grids, Graphics, StdCtrls, LCLVersion,
   uDisplayFile, DCXmlConfig, uFileSorting, uFileProperty,
   uFileViewWithMainCtrl, uFile, uFileViewHeader, uFileView, uFileSource,
-  uSmoothScrollingGrid;
+  uFileViewBaseGrid;
 
 type
 
@@ -16,12 +16,13 @@ type
 
   { TFileViewGrid }
 
-  TFileViewGrid = class(TSmoothScrollingGrid)
+  TFileViewGrid = class(TFileViewBaseGrid)
   protected
     FLastMouseMoveTime: QWord;
     FLastMouseScrollTime: QWord;
     FFileView: TFileViewWithGrid;
   protected
+    function getFileView: TFileView; override;
     procedure Scroll(Message: Cardinal; ScrollCode: SmallInt);
     {$IF lcl_fullversion < 1080003}
     function SelectCell(aCol, aRow: Integer): Boolean; override;
@@ -30,7 +31,6 @@ type
     procedure ColWidthsChanged;  override;
     procedure FinalizeWnd; override;
     procedure InitializeWnd; override;
-    function MouseOnGrid(X, Y: LongInt): Boolean;
     procedure DoOnResize; override;
     procedure DragCanceled; override;
     procedure KeyDown(var Key : Word; Shift : TShiftState); override;
@@ -51,7 +51,6 @@ type
     {$endif}
   public
     constructor Create(AOwner: TComponent; AParent: TWinControl); reintroduce; virtual;
-    function  CellToIndex(ACol, ARow: Integer): Integer; virtual; abstract;
     procedure IndexToCell(Index: Integer; out ACol, ARow: Integer); virtual; abstract;
     property BorderWidth: Integer read GetBorderWidth;
   end;
@@ -209,6 +208,11 @@ begin
   inherited KeyDown(Key, Shift);
 end;
 
+function TFileViewGrid.getFileView: TFileView;
+begin
+  Result:= self.FFileView;
+end;
+
 procedure TFileViewGrid.Scroll(Message: Cardinal; ScrollCode: SmallInt);
 var
   Msg: TLMScroll;
@@ -244,18 +248,6 @@ procedure TFileViewGrid.ColWidthsChanged;
 begin
   inherited ColWidthsChanged;
   CalculateColRowCount;
-end;
-
-function TFileViewGrid.MouseOnGrid(X, Y: LongInt): Boolean;
-var
-  bTemp: Boolean;
-  iRow, iCol: LongInt;
-begin
-  bTemp:= AllowOutboundEvents;
-  AllowOutboundEvents:= False;
-  MouseToCell(X, Y, iCol, iRow);
-  AllowOutboundEvents:= bTemp;
-  Result:= not (CellToIndex(iCol, iRow) < 0);
 end;
 
 procedure TFileViewGrid.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
@@ -671,17 +663,13 @@ end;
 
 function TFileViewWithGrid.GetFileIndexFromCursor(X, Y: Integer; out AtFileList: Boolean): PtrInt;
 var
-  bTemp: Boolean;
   iRow, iCol: LongInt;
 begin
   with dgPanel do
   begin
-    bTemp:= AllowOutboundEvents;
-    AllowOutboundEvents:= False;
-    MouseToCell(X, Y, iCol, iRow);
-    AllowOutboundEvents:= bTemp;
+    MouseToCellWithoutOutbound(X, Y, iCol, iRow);
     Result:= CellToIndex(iCol, iRow);
-    AtFileList := True; // Always at file list because header in dgPanel not used
+    AtFileList:= True; // Always at file list because header in dgPanel not used
   end;
 end;
 

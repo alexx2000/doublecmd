@@ -512,23 +512,23 @@ msgstr "取消"
 
 #: tfrmdiffer.actcopylefttoright.caption
 msgctxt "tfrmdiffer.actcopylefttoright.caption"
-msgid "Copy Block Right"
-msgstr "复制右侧的块"
+msgid "Copy Block To Right"
+msgstr "复制到右侧"
 
 #: tfrmdiffer.actcopylefttoright.hint
 msgctxt "TFRMDIFFER.ACTCOPYLEFTTORIGHT.HINT"
-msgid "Copy Block Right"
-msgstr "复制右侧的块"
+msgid "Copy Block From Left To Right"
+msgstr "将内容从左侧复制到右侧"
 
 #: tfrmdiffer.actcopyrighttoleft.caption
 msgctxt "tfrmdiffer.actcopyrighttoleft.caption"
-msgid "Copy Block Left"
-msgstr "复制左侧的块"
+msgid "Copy Block To Left"
+msgstr "复制到左侧"
 
 #: tfrmdiffer.actcopyrighttoleft.hint
 msgctxt "TFRMDIFFER.ACTCOPYRIGHTTOLEFT.HINT"
-msgid "Copy Block Left"
-msgstr "复制左侧的块"
+msgid "Copy Block From Right To Left"
+msgstr "将内容从右侧复制到左侧"
 
 #: tfrmdiffer.acteditcopy.caption
 msgctxt "tfrmdiffer.acteditcopy.caption"
@@ -7873,7 +7873,7 @@ msgstr "在当前选择之前"
 
 #: tfrmoptionstoolbarbase.rblinebreak.caption
 msgid "Line break"
-msgstr ""
+msgstr "換行"
 
 #: tfrmoptionstoolbarbase.rbseparator.caption
 msgid "Separator"
@@ -10846,6 +10846,20 @@ msgstr "<查找文件> 窗口列表"
 msgid "Assign tags to %d items"
 msgstr "将标签分配给%d个项目"
 
+#: ulng.rsmacosconnectserverprompt
+msgid ""
+"URL:\n"
+"(eg. smb://server/share; https://dav.server.com; nfs://server/path)\n"
+" "
+msgstr ""
+"URL:\n"
+"(样例：smb://server/share; https://dav.server.com; nfs://server/path)\n"
+" "
+
+#: ulng.rsmacosconnectservertitle
+msgid "SMB / Samba / WebDAV / NFS ..."
+msgstr ""
+
 #: ulng.rsmarkminus
 msgid "Unselect mask"
 msgstr "不选择掩码"
@@ -10963,6 +10977,26 @@ msgstr "在“访达”中访问文件"
 msgctxt "ulng.rsmfstbifinderrevealtitle"
 msgid "Finder"
 msgstr "访达"
+
+#: ulng.rsmfstbigobackwardtips
+msgctxt "ulng.rsmfstbigobackwardtips"
+msgid "Backward"
+msgstr "返回"
+
+#: ulng.rsmfstbigobackwardtitle
+msgctxt "ulng.rsmfstbigobackwardtitle"
+msgid "Backward"
+msgstr "返回"
+
+#: ulng.rsmfstbigoforwardtips
+msgctxt "ulng.rsmfstbigoforwardtips"
+msgid "Forward"
+msgstr "前进"
+
+#: ulng.rsmfstbigoforwardtitle
+msgctxt "ulng.rsmfstbigoforwardtitle"
+msgid "Forward"
+msgstr "前进"
 
 #: ulng.rsmfstbigotips
 msgctxt "ulng.rsmfstbigotips"
@@ -11970,12 +12004,12 @@ msgstr "无效选择。"
 #: ulng.rsmsgkeytransformerror
 #, object-pascal-format
 msgid "The key transformation failed (error code %d)!"
-msgstr ""
+msgstr "密钥变换失败（错误代码 %d）！"
 
 #: ulng.rsmsgkeytransformtime
 #, object-pascal-format
 msgid "The key transformation took %f seconds."
-msgstr ""
+msgstr "密钥变换需要%f秒。"
 
 #: ulng.rsmsgloadingfilelist
 msgid "Loading file list..."

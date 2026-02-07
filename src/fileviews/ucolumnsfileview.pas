@@ -18,7 +18,10 @@ uses
   DCXmlConfig,
   DCBasicTypes,
   uTypes,
-  uSmoothScrollingGrid,
+{$IFDEF DARWIN}
+  uDarwinFileView,
+{$ENDIF}
+  uFileViewBaseGrid,
   uFileViewWithGrid;
 
 type
@@ -29,14 +32,12 @@ type
 
   { TDrawGridEx }
 
-  TDrawGridEx = class(TSmoothScrollingGrid)
+  TDrawGridEx = class(TFileViewBaseGrid)
   private
     FMouseDownY: Integer;
     FLastMouseMoveTime: QWord;
     FLastMouseScrollTime: QWord;
     ColumnsView: TColumnsFileView;
-
-    FOnDrawCell: TFileViewOnDrawCell;
 
     function GetGridHorzLine: Boolean;
     function GetGridVertLine: Boolean;
@@ -44,6 +45,8 @@ type
     procedure SetGridVertLine(const AValue: Boolean);
 
   protected
+    function getFileView: TFileView; override;
+
     procedure DragCanceled; override;
     procedure DoMouseMoveScroll(X, Y: Integer);
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
@@ -71,8 +74,6 @@ type
 
     procedure UpdateView;
 
-    function MouseOnGrid(X, Y: LongInt): Boolean;
-
     // Returns height of all the header rows.
     function GetHeaderHeight: Integer;
 
@@ -89,7 +90,8 @@ type
     property GridVertLine: Boolean read GetGridVertLine write SetGridVertLine;
     property GridHorzLine: Boolean read GetGridHorzLine write SetGridHorzLine;
 
-    property OnDrawCell: TFileViewOnDrawCell read FOnDrawCell write FOnDrawCell;
+    function CellToIndex(ACol, ARow: Integer): Integer; override;
+    function isMultiColumns: Boolean; override;
   end;
 
   TColumnResized = procedure (Sender: TObject; ColumnIndex: Integer; ColumnNewsize: integer) of object;
@@ -107,9 +109,6 @@ type
     pmColumnsMenu: TPopupMenu;
     dgPanel: TDrawGridEx;
     FOnColumnResized: TColumnResized;
-
-    function GetOnDrawCell: TFileViewOnDrawCell;
-    procedure SetOnDrawCell( OnDrawCell: TFileViewOnDrawCell );
 
     function GetColumnsClass: TPanelColumnsClass;
 
@@ -214,7 +213,6 @@ type
     procedure SetGridFunctionDim(ExternalDimFunction:TFunctionDime);
 
     property OnColumnResized: TColumnResized read FOnColumnResized write FOnColumnResized;
-    property OnDrawCell: TFileViewOnDrawCell read GetOnDrawCell write SetOnDrawCell;
   published
     procedure cm_SaveFileDetailsToFile(const Params: array of string);
     procedure cm_CopyFileDetailsToClip(const Params: array of string);
@@ -932,6 +930,9 @@ begin
   dgPanel.OnTopLeftChanged:= @dgPanelTopLeftChanged;
   dgpanel.OnResize:= @dgPanelResize;
   dgPanel.OnHeaderSized:= @dgPanelHeaderSized;
+  {$IFDEF DARWIN}
+  dgPanel.OnDrawCell:= @darwinFileViewDrawHandler.onDrawCell;
+  {$ENDIF}
 
   pmColumnsMenu := TPopupMenu.Create(Self);
   pmColumnsMenu.Parent := Self;
@@ -962,7 +963,6 @@ begin
     with TColumnsFileView(FileView) do
     begin
       FColumnsSortDirections := Self.FColumnsSortDirections;
-      OnDrawCell := Self.OnDrawCell;
 
       ActiveColm := Self.ActiveColm;
       ActiveColmSlave := nil;
@@ -1121,16 +1121,6 @@ begin
   Dec(Result.Last, dgPanel.FixedRows);
 end;
 
-function TColumnsFileView.GetOnDrawCell: TFileViewOnDrawCell;
-begin
-  Result:= dgPanel.OnDrawCell;
-end;
-
-procedure TColumnsFileView.SetOnDrawCell(OnDrawCell: TFileViewOnDrawCell);
-begin
-  dgPanel.OnDrawCell:= OnDrawCell;
-end;
-
 function TColumnsFileView.GetColumnsClass: TPanelColumnsClass;
 begin
   if isSlave then
@@ -1141,17 +1131,13 @@ end;
 
 function TColumnsFileView.GetFileIndexFromCursor(X, Y: Integer; out AtFileList: Boolean): PtrInt;
 var
-  bTemp: Boolean;
   iRow, iCol: LongInt;
 begin
   with dgPanel do
   begin
-    bTemp:= AllowOutboundEvents;
-    AllowOutboundEvents:= False;
-    MouseToCell(X, Y, iCol, iRow);
-    AllowOutboundEvents:= bTemp;
-    Result:= IfThen(iRow < 0, InvalidFileIndex, iRow - FixedRows);
-    AtFileList := Y >= GetHeaderHeight;
+    MouseToCellWithoutOutbound(X, Y, iCol, iRow);
+    Result:= CellToIndex(iCol, iRow);
+    AtFileList:= Y >= GetHeaderHeight;
   end;
 end;
 
@@ -1424,7 +1410,7 @@ procedure TDrawGridEx.UpdateView;
     OldFont     := Canvas.Font;
     Canvas.Font := Font;
     SetCanvasFont(GetColumnFont(0, True));
-    Result      := Canvas.TextHeight('Wg');
+    Result      := self.calcTextHeight;
     Canvas.Font := OldFont;
   end;
 
@@ -1952,23 +1938,6 @@ var
     aRect := CCell.Rect;
   end;
 
-  procedure callFileSourceDrawCell;
-  var
-    handler: TFileSourceUIHandler;
-  begin
-    handler:= ColumnsView.FileSource.GetUIHandler;
-    if handler = nil then
-      Exit;
-
-    handler.draw( params );
-  end;
-
-  procedure callOnDrawCell;
-  begin
-    if Assigned(OnDrawCell) and not(CsDesigning in ComponentState) then
-      OnDrawCell(Self.ColumnsView,aCol,aRow,params.drawingRect,params.focused,AFile);
-  end;
-
   //------------------------------------------------------
   //end of subprocedures
   //------------------------------------------------------
@@ -1991,19 +1960,18 @@ begin
     FileSourceDirectAccess := fspDirectAccess in ColumnsView.FileSource.Properties;
 
     params:= Default( TFileSourceUIParams );
-    params.sender:= Self.ColumnsView;
-    params.fs:= Self.ColumnsView.FileSource;
-    params.multiColumns:= True;
     params.col:= aCol;
     params.row:= aRow;
     params.displayFile:= aFile;
+    params.drawingRect:= aRect;
+    params.focused:= (gdSelected in aState) and ColumnsView.Active;
 
     if AFile.DisplayStrings.Count = 0 then
       ColumnsView.MakeColumnsStrings(AFile, ColumnsSet);
 
     PrepareColors;
 
-    iTextTop := aRect.Top + (aRect.Height - Canvas.TextHeight('Wg')) div 2;
+    iTextTop := aRect.Top + (aRect.Height - self.calcTextHeight) div 2;
 
     if gExtendCellWidth then
       DrawExtendedCells
@@ -2015,10 +1983,7 @@ begin
         DrawOtherCell;
     end;
 
-    params.drawingRect:= aRect;
-    params.focused:= (gdSelected in aState) and ColumnsView.Active;
-    callFileSourceDrawCell;
-    callOnDrawCell;
+    self.doCellEnhancedDraw( params );
 
     DrawCellGrid(aCol,aRow,aRect,aState);
     DrawLines;
@@ -2054,37 +2019,6 @@ var
   FileSystem: String;
   Background: Boolean;
 
-  procedure handleMBLeft;
-  var
-    handler: TFileSourceUIHandler;
-    params: TFileSourceUIParams;
-  begin
-    params:= Default( TFileSourceUIParams );
-    params.sender:= self.ColumnsView;
-    params.fs:= self.ColumnsView.FileSource;
-    params.multiColumns:= True;
-
-    handler:= params.fs.GetUIHandler;
-    if handler = nil then
-      Exit;
-
-    params.shift:= Shift;
-    params.x:= X;
-    params.y:= Y;
-    MouseToCell( X, Y, params.col, params.row );
-    if NOT self.IsRowIndexValid(params.row) then
-      Exit;
-
-    ColRowToOffset(True, True, params.col, params.drawingRect.Left, params.drawingRect.Right );
-    ColRowToOffset(False, True, params.row, params.drawingRect.Top, params.drawingRect.Bottom );
-
-    if params.row <= FixedRows then
-      Exit;
-
-    params.displayFile:= ColumnsView.FFiles[params.row - FixedRows];
-    handler.click( params );
-  end;
-
 begin
   if ColumnsView.IsLoadingFileList then Exit;
 {$IFDEF LCLGTK2}
@@ -2106,7 +2040,7 @@ begin
 
   if Button = mbLeft then
   begin
-    handleMBLeft;
+    self.doCellClick( Shift, X, Y );
   end else if Button = mbRight then
     begin
       { If right click on header }
@@ -2238,18 +2172,6 @@ begin
   if ColumnsView.IsMouseSelecting then DoMouseMoveScroll(X, Y);
 end;
 
-function TDrawGridEx.MouseOnGrid(X, Y: LongInt): Boolean;
-var
-  bTemp: Boolean;
-  iRow, iCol: LongInt;
-begin
-  bTemp:= AllowOutboundEvents;
-  AllowOutboundEvents:= False;
-  MouseToCell(X, Y, iCol, iRow);
-  AllowOutboundEvents:= bTemp;
-  Result:= not ((iCol < 0) and (iRow < 0));
-end;
-
 function TDrawGridEx.GetHeaderHeight: Integer;
 var
   i : Integer;
@@ -2285,6 +2207,11 @@ begin
     Options := Options + [goVertLine]
   else
     Options := Options - [goVertLine];
+end;
+
+function TDrawGridEx.getFileView: TFileView;
+begin
+  Result:= self.ColumnsView;
 end;
 
 function TDrawGridEx.GetVisibleRows: TRange;
@@ -2435,6 +2362,19 @@ begin
       if TryMove(i) then
         Break;
   end;
+end;
+
+function TDrawGridEx.CellToIndex(ACol, ARow: Integer): Integer;
+begin
+  Result:= -1;
+  if (ARow < 0) or (ARow >= RowCount) then
+    Exit;
+  Result:= ARow - FixedRows;
+end;
+
+function TDrawGridEx.isMultiColumns: Boolean;
+begin
+  Result:= True;
 end;
 
 end.

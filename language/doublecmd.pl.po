@@ -510,23 +510,31 @@ msgid "Cancel"
 msgstr "Anuluj"
 
 #: tfrmdiffer.actcopylefttoright.caption
+#, fuzzy
+#| msgid "Copy Block Right"
 msgctxt "tfrmdiffer.actcopylefttoright.caption"
-msgid "Copy Block Right"
+msgid "Copy Block To Right"
 msgstr "Kopiuj blok na prawo"
 
 #: tfrmdiffer.actcopylefttoright.hint
+#, fuzzy
+#| msgid "Copy Block Right"
 msgctxt "tfrmdiffer.actcopylefttoright.hint"
-msgid "Copy Block Right"
+msgid "Copy Block From Left To Right"
 msgstr "Kopiuj blok na prawo"
 
 #: tfrmdiffer.actcopyrighttoleft.caption
+#, fuzzy
+#| msgid "Copy Block Left"
 msgctxt "tfrmdiffer.actcopyrighttoleft.caption"
-msgid "Copy Block Left"
+msgid "Copy Block To Left"
 msgstr "Kopiuj blok na lewo"
 
 #: tfrmdiffer.actcopyrighttoleft.hint
+#, fuzzy
+#| msgid "Copy Block Left"
 msgctxt "tfrmdiffer.actcopyrighttoleft.hint"
-msgid "Copy Block Left"
+msgid "Copy Block From Right To Left"
 msgstr "Kopiuj blok na lewo"
 
 #: tfrmdiffer.acteditcopy.caption
@@ -10820,6 +10828,17 @@ msgstr "Lista okien \"Znajdź pliki\""
 msgid "Assign tags to %d items"
 msgstr ""
 
+#: ulng.rsmacosconnectserverprompt
+msgid ""
+"URL:\n"
+"(eg. smb://server/share; https://dav.server.com; nfs://server/path)\n"
+" "
+msgstr ""
+
+#: ulng.rsmacosconnectservertitle
+msgid "SMB / Samba / WebDAV / NFS ..."
+msgstr ""
+
 #: ulng.rsmarkminus
 msgid "Unselect mask"
 msgstr "Maska odznaczania"
@@ -10938,6 +10957,26 @@ msgstr ""
 
 #: ulng.rsmfstbifinderrevealtitle
 msgid "Finder"
+msgstr ""
+
+#: ulng.rsmfstbigobackwardtips
+msgctxt "ulng.rsmfstbigobackwardtips"
+msgid "Backward"
+msgstr ""
+
+#: ulng.rsmfstbigobackwardtitle
+msgctxt "ulng.rsmfstbigobackwardtitle"
+msgid "Backward"
+msgstr ""
+
+#: ulng.rsmfstbigoforwardtips
+msgctxt "ulng.rsmfstbigoforwardtips"
+msgid "Forward"
+msgstr ""
+
+#: ulng.rsmfstbigoforwardtitle
+msgctxt "ulng.rsmfstbigoforwardtitle"
+msgid "Forward"
 msgstr ""
 
 #: ulng.rsmfstbigotips

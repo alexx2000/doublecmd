@@ -8,10 +8,8 @@ interface
 
 uses
   Classes, SysUtils,
-  uDebug, uLog,
-  uFileProperty,
   MacOSAll, CocoaAll, Cocoa_Extra, CocoaUtils,
-  uDarwinUtil, uDarwinFinderModel;
+  uDarwinUtil;
 
 type
   
@@ -32,14 +30,18 @@ type
     class function unmountAndEject( const path: String ): Boolean;
     class function resolveAlias( const path: String ): String;
   public
-    class function getSpecificProperty( const path: String ): TFileMacOSSpecificProperty;
     class function getDisplayName( const path: String ): String;
+    class function getIconForFile( const path: String ): NSImage;
+    class function getIconForExt( const ext: String ): NSImage;
     class function getUniqueIcon( const path: String ): NSImage;
     class function getDescription( const path: String ): String;
   public
     class function getTempPath: String;
     class function getTerminalPath: String;
     class function getSpecifiedFolderPath( folder: NSSearchPathDirectory ): String;
+  public
+    class function dataWithContentsOfFile( const path: NSString; const tag: String ): NSData; overload;
+    class function dataWithContentsOfFile( const path: String; const tag: String ): NSData; overload;
   end;
 
 implementation
@@ -97,96 +99,15 @@ begin
 end;
 
 procedure TUnmountManager.onComplete( error: NSError ); cdecl;
-var
-  msg: String;
 begin
-  if Assigned(error) then begin
-    msg:= 'there is an error in TUnmountManager when unmount: ' + error.localizedDescription.UTF8String;
-    DCDebug( msg );
-    LogWrite( msg , lmtError );
-  end;
+  if Assigned(error) then
+    logDarwinError( 'TUnmountManager error when unmount', error );
   self.Free;
 end;
 
 class function TDarwinFileUtil.unmountAndEject(const path: String): Boolean;
 begin
   Result:= TUnmountManager.unmount( path, True );
-end;
-
-class function TDarwinFileUtil.getSpecificProperty(const path: String
-  ): TFileMacOSSpecificProperty;
-var
-  url: NSURL;
-
-  function toPrimaryColors(const tagNames: NSArray): TFileFinderTagPrimaryColors;
-  var
-    visualTagNames: NSMutableArray;
-    tagName: NSString;
-    tag: TFinderTag;
-    iSource: NSUInteger;
-    iDest: Integer;
-    colorIndex: Integer;
-  begin
-    visualTagNames:= NSMutableArray.new;
-    for iSource:= 0 to tagNames.count-1 do begin
-      tagName:= NSString( tagNames.objectAtIndex(iSource) );
-      tag:= TFinderTags.getTagOfName( tagName );
-      if tag.colorIndex <= 0 then
-        continue;
-      visualTagNames.addObject( tagName );
-    end;
-
-    iSource:= 0;
-    if visualTagNames.count > 3 then
-      iSource:= visualTagNames.count - 3;
-    for iDest:=0 to 2 do begin
-      colorIndex:= -1;
-      if iSource < visualTagNames.count then begin
-        tagName:= NSString( visualTagNames.objectAtIndex(iSource) );
-        tag:= TFinderTags.getTagOfName( tagName );
-        colorIndex:= tag.colorIndex;
-      end;
-      Result.indexes[iDest]:= colorIndex;
-      inc( iSource );
-    end;
-
-    visualTagNames.release;
-  end;
-
-  function getTagPrimaryColors: TFileFinderTagPrimaryColors;
-  var
-    tagNames: NSArray;
-  begin
-    Result.intValue:= -1;
-    tagNames:= TDarwinFinderModelUtil.getTagNamesOfFile( url );
-    if tagNames = nil then
-      Exit;
-    Result:= toPrimaryColors( tagNames );
-  end;
-
-  function isSeedFile: Boolean;
-  var
-    name: NSString;
-    status: NSString;
-  begin
-    name:= url.lastPathComponent;
-    if name.isEqualToString(NSSTR('..')) then
-      Exit( False );
-    if name.hasPrefix(NSSTR('.')) and name.hasSuffix(NSSTR('.icloud')) then
-      Exit( True );
-
-    url.getResourceValue_forKey_error( @status, NSURLUbiquitousItemDownloadingStatusKey, nil );
-    if status = nil then
-      Exit( False );
-
-    Result:= NOT status.isEqualToString( NSURLUbiquitousItemDownloadingStatusCurrent );
-  end;
-
-begin
-  Result:= TFileMacOSSpecificProperty.Create;
-  url:= NSURL.fileURLWithPath( StringToNSString(path) );
-  Result.FinderTagPrimaryColors:= getTagPrimaryColors;
-  Result.IsiCloudSeedFile:= isSeedFile;
 end;
 
 class function TDarwinFileUtil.getDisplayName(const path: String): String;
@@ -197,6 +118,19 @@ begin
   cocoaPath:= StringToNSString(path).stringByStandardizingPath;
   displayName:= NSFileManager.defaultManager.displayNameAtPath( cocoaPath );
   Result:= displayName.UTF8String;
+end;
+
+class function TDarwinFileUtil.getIconForFile(const path: String): NSImage;
+begin
+  Result:= NSWorkspace.sharedWorkspace.iconForFile( StringToNSString(path) );
+end;
+
+class function TDarwinFileUtil.getIconForExt(const ext: String): NSImage;
+var
+  fileType: NSString;
+begin
+  fileType:= StringToNSString( ext );
+  Result:= NSWorkspace.sharedWorkspace.iconForFileType( fileType );
 end;
 
 class function TDarwinFileUtil.getUniqueIcon(const path: String): NSImage;
@@ -233,7 +167,7 @@ class function TDarwinFileUtil.getUniqueIcon(const path: String): NSImage;
 begin
   Result:= nil;
   if hasUniqueIcon(path) or hasSpecialFolderExt(path) or inSpecialParentFolder(path) then
-    Result:= NSWorkspace.sharedWorkspace.iconForFile( StringToNSString(path) );
+    Result:= TDarwinFileUtil.getIconForFile( path );
 end;
 
 class function TDarwinFileUtil.getTempPath: String;
@@ -258,9 +192,25 @@ begin
   end;
 end;
 
+class function TDarwinFileUtil.dataWithContentsOfFile
+  ( const path: NSString; const tag: String ): NSData;
+var
+  error: NSError = nil;
+begin
+  Result:= NSData.dataWithContentsOfFile_options_error( path, 0, @error );
+  if error <> nil then
+    logDarwinError( tag, error );
+end;
+
+class function TDarwinFileUtil.dataWithContentsOfFile(
+  const path: String; const tag: String ): NSData;
+begin
+  Result:= TDarwinFileUtil.dataWithContentsOfFile( StringToNSString(path), tag );
+end;
+
 class function TDarwinFileUtil.getDescription(const path: String): String;
 var
-  Error: NSError;
+  error: NSError = nil;
   WS: NSWorkspace;
   FileType: NSString;
   FileNameRef: CFStringRef;
@@ -268,9 +218,9 @@ begin
   WS:= NSWorkspace.sharedWorkspace;
   FileNameRef:= StringToCFStringRef(path);
   if (FileNameRef = nil) then Exit(EmptyStr);
-  FileType:= WS.typeOfFile_error(NSString(FileNameRef), @Error);
+  FileType:= WS.typeOfFile_error(NSString(FileNameRef), @error);
   if (FileType = nil) then
-    Result:= Error.localizedDescription.UTF8String
+    Result:= error.localizedDescription.UTF8String
   else begin
     Result:= WS.localizedDescriptionForType(FileType).UTF8String;
   end;
@@ -281,12 +231,16 @@ class function TDarwinFileUtil.resolveAlias(const path: String): String;
 var
   ASource: NSURL;
   ATarget: NSURL;
+  error: NSError = nil;
 begin
   Result:= EmptyStr;
   ASource:= NSURL.fileURLWithPath(StringToNSString(path));
-  ATarget:= NSURL.URLByResolvingAliasFileAtURL_options_error(ASource, NSURLBookmarkResolutionWithoutUI, nil);
+  ATarget:= NSURL.URLByResolvingAliasFileAtURL_options_error(
+    ASource, NSURLBookmarkResolutionWithoutUI, @error );
   if Assigned(ATarget) then
-    Result:= ATarget.fileSystemRepresentation;
+    Result:= ATarget.fileSystemRepresentation
+  else
+    logDarwinError( 'TDarwinFileUtil.resolveAlias', error );
 end;
 
 procedure Initialize;

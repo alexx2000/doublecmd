@@ -8,8 +8,8 @@ interface
 uses
   Classes, SysUtils, LCLType,
   sqldb, SQLite3Conn, syncobjs,
-  uLog, uDebug,
-  MacOSAll, CocoaAll, CocoaConst, CocoaUtils, Cocoa_Extra;
+  MacOSAll, CocoaAll, CocoaConst, Cocoa_Extra,
+  uDarwinFile, uDarwinUtil;
 
 type
 
@@ -53,7 +53,7 @@ type
 
   TFinderTagNSColors = Array of NSColor;
 
-  TMacOSSearchResultHandler = procedure ( const searchName: String; const files: TStringArray ) of object;
+  TDarwinSearchResultHandler = procedure ( const info: NSObject; const files: TStringArray ) of object;
 
   TFinderFavoriteTagMenuItemState = ( selectionAll, selectionNone, selectionMixed );
 
@@ -74,8 +74,8 @@ type
     class function getTagsDataFromDatabase: TBytes;
     class procedure initFinderTagNSColors;
     class procedure doSearchFiles(
-      const searchName: NSString;
-      const handler: TMacOSSearchResultHandler;
+      const info: NSObject;
+      const handler: TDarwinSearchResultHandler;
       const predicate: NSPredicate;
       const scopes: NSArray );
   public
@@ -92,10 +92,10 @@ type
     class procedure removeTagForFile( const url: NSURL; const tagName: NSString );
     class procedure removeTagForFiles( const urls: NSArray; const tagName: NSString );
   public
-    class procedure searchFilesForTagName( const tagName: NSString; const handler: TMacOSSearchResultHandler );
-    class procedure searchFilesForTagNames( const tagNames: NSArray; const handler: TMacOSSearchResultHandler );
-    class procedure searchFilesBySavedSearch( const path: NSString; const handler: TMacOSSearchResultHandler );
-    class procedure searchFilesBySavedSearch( const path: String; const handler: TMacOSSearchResultHandler );
+    class procedure searchFilesForTagName( const tagName: NSString; const handler: TDarwinSearchResultHandler );
+    class procedure searchFilesForTagNames( const tagNames: NSArray; const handler: TDarwinSearchResultHandler );
+    class procedure searchFilesBySavedSearch( const path: NSString; const handler: TDarwinSearchResultHandler );
+    class procedure searchFilesBySavedSearch( const path: String; const handler: TDarwinSearchResultHandler );
   public
     class property editorFinderTagNSColors: TFinderTagNSColors read _editorFinderTagNSColors;
     class property menuFinderTagNSColors: TFinderTagNSColors read _menuFinderTagNSColors;
@@ -209,21 +209,21 @@ begin
   end;
 end;
 
-{ TMacOSQueryHandler }
+{ TDarwinQueryHandler }
 
 type
-  TMacOSQueryHandler = objcclass( NSObject )
+  TDarwinQueryHandler = objcclass( NSObject )
   private
-    _queryName: NSString;
+    _queryInfo: NSObject;
     _query: NSMetadataQuery;
-    _handler: TMacOSSearchResultHandler;
+    _handler: TDarwinSearchResultHandler;
     procedure initalGatherComplete( sender: id ); message 'initalGatherComplete:';
   public
-    function initWithName( name: NSString ): id; message 'doublecmd_initWithName:';
+    function initWithInfo( info: NSObject ): id; message 'doublecmd_initWithInfo:';
     procedure dealloc; override;
   end;
 
-procedure TMacOSQueryHandler.initalGatherComplete(sender: id);
+procedure TDarwinQueryHandler.initalGatherComplete(sender: id);
 var
   item: NSMetadataItem;
   path: NSString;
@@ -248,21 +248,21 @@ begin
     end;
   end;
 
-  _handler( _queryName.UTF8String, files );
+  _handler( _queryInfo, files );
 
   self.release;
 end;
 
-function TMacOSQueryHandler.initWithName(name: NSString): id;
+function TDarwinQueryHandler.initWithInfo(info: NSObject): id;
 begin
-  _queryName:= name;
-  _queryName.retain;
+  _queryInfo:= info;
+  _queryInfo.retain;
   Result:= self;
 end;
 
-procedure TMacOSQueryHandler.dealloc;
+procedure TDarwinQueryHandler.dealloc;
 begin
-  _queryName.release;
+  _queryInfo.release;
   _query.release;
 end;
 
@@ -273,11 +273,14 @@ class function TDarwinFinderModelUtil.getTagNamesOfFile(const url: NSURL
 var
   ret: Boolean;
   tagNames: NSArray;
+  error: NSError = nil;
 begin
   Result:= nil;
-  ret:= url.getResourceValue_forKey_error( @tagNames, NSURLTagNamesKey, nil );
+  ret:= url.getResourceValue_forKey_error( @tagNames, NSURLTagNamesKey, @error );
   if ret then
-    Result:= tagNames;
+    Result:= tagNames
+  else
+    logDarwinError( 'TDarwinFinderModelUtil.getTagNamesOfFile', error );
 end;
 
 class function TDarwinFinderModelUtil.getTagNamesOfFiles(const urls: NSArray
@@ -296,8 +299,13 @@ end;
 
 class procedure TDarwinFinderModelUtil.setTagNamesOfFile(const url: NSURL;
   const tagNames: NSArray);
+var
+  error: NSError = nil;
+  ok: Boolean;
 begin
-  url.setResourceValue_forKey_error( tagNames, NSURLTagNamesKey, nil );
+  ok:= url.setResourceValue_forKey_error( tagNames, NSURLTagNamesKey, @error );
+  if NOT ok then
+    logDarwinError( 'TDarwinFinderModelUtil.setTagNamesOfFile', error );
 end;
 
 class procedure TDarwinFinderModelUtil.addTagForFile(const url: NSURL;
@@ -347,18 +355,18 @@ begin
 end;
 
 class procedure TDarwinFinderModelUtil.doSearchFiles(
-  const searchName: NSString;
-  const handler: TMacOSSearchResultHandler;
+  const info: NSObject;
+  const handler: TDarwinSearchResultHandler;
   const predicate: NSPredicate;
   const scopes: NSArray);
 var
-  queryHandler: TMacOSQueryHandler;
+  queryHandler: TDarwinQueryHandler;
   query: NSMetadataQuery;
 begin
   // release in initalGatherComplete()
   query:= NSMetadataQuery.new;
   // release in initalGatherComplete()
-  queryHandler:= TMacOSQueryHandler.alloc.initWithName( searchName );
+  queryHandler:= TDarwinQueryHandler.alloc.initWithInfo( info );
   queryHandler._query:= query;
   queryHandler._handler:= handler;
   NSNotificationCenter.defaultCenter.addObserver_selector_name_object(
@@ -374,7 +382,7 @@ begin
 end;
 
 class procedure TDarwinFinderModelUtil.searchFilesBySavedSearch(
-  const path: NSString; const handler: TMacOSSearchResultHandler);
+  const path: NSString; const handler: TDarwinSearchResultHandler);
 var
   searchName: NSString;
   predicate: NSPredicate;
@@ -385,15 +393,18 @@ var
   var
     plistData: NSData;
     plistProperties: id;
+    error: NSError = nil;
   begin
-    plistData:= NSData.dataWithContentsOfFile( path );
+    plistData:= TDarwinFileUtil.dataWithContentsOfFile( path, 'TDarwinFinderModelUtil.searchFilesBySavedSearch.analyseSavedSearch()' );
     if plistData = nil then
       raise EInOutError.Create( 'savedSearch File Read Error: ' + path.UTF8String );
 
     plistProperties:= NSPropertyListSerialization.propertyListWithData_options_format_error(
-      plistData, NSPropertyListImmutable, nil, nil );
-    if plistProperties = nil then
+      plistData, NSPropertyListImmutable, nil, @error );
+    if plistProperties = nil then begin
+      logDarwinError( 'TDarwinFinderModelUtil.analyseSavedSearch', error );
       raise EFormatError.Create( 'savedSearch File Content Error: ' + path.UTF8String );
+    end;
 
     plistProperties:= plistProperties.valueForKeyPath( NSSTR('RawQueryDict') );
     if plistProperties = nil then
@@ -414,27 +425,13 @@ begin
 end;
 
 class procedure TDarwinFinderModelUtil.searchFilesBySavedSearch(
-  const path: String; const handler: TMacOSSearchResultHandler);
+  const path: String; const handler: TDarwinSearchResultHandler);
 begin
-  TDarwinFinderModelUtil.searchFilesBySavedSearch( StrToNSString(path), handler );
+  TDarwinFinderModelUtil.searchFilesBySavedSearch( StringToNSString(path), handler );
 end;
 
 class procedure TDarwinFinderModelUtil.searchFilesForTagNames(
-  const tagNames: NSArray; const handler: TMacOSSearchResultHandler );
-
-  function toString: NSString;
-  var
-    tagName: NSString;
-    name: NSMutableString;
-  begin
-    name:= NSMutableString.new;
-    for tagName in tagNames do begin
-      name.appendString( tagName );
-      name.appendString( NSSTR('|') );
-    end;
-    Result:= name.substringToIndex( name.length-1 );
-    name.release;
-  end;
+  const tagNames: NSArray; const handler: TDarwinSearchResultHandler );
 
   function formatString: NSString;
   var
@@ -452,19 +449,17 @@ class procedure TDarwinFinderModelUtil.searchFilesForTagNames(
   end;
 
 var
-  searchName: NSString;
   predicate: NSPredicate;
 begin
   if tagNames.count = 0 then
     Exit;
 
-  searchName:= toString();
   predicate:= NSPredicate.predicateWithFormat_argumentArray( formatString(), tagNames );
-  self.doSearchFiles( searchName, handler, predicate, nil );
+  self.doSearchFiles( tagNames, handler, predicate, nil );
 end;
 
 class procedure TDarwinFinderModelUtil.searchFilesForTagName(
-  const tagName: NSString; const handler: TMacOSSearchResultHandler);
+  const tagName: NSString; const handler: TDarwinSearchResultHandler);
 var
   tagNames: NSArray;
 begin
@@ -488,8 +483,7 @@ begin
   except
     // it is suitable for just recording exception and handling it silently
     on e: Exception do begin
-      DCDebug( 'Exception in uDarwinFinderUtil.getAllTags(): ', e.ToString );
-      LogWrite( 'Exception in uDarwinFinderUtil.getAllTags(): ' + e.ToString, lmtError );
+      logDarwinException( 'uDarwinFinderUtil.getAllTags()', e );
     end;
   end;
 end;
@@ -499,18 +493,21 @@ var
   path: NSString;
   plistData: NSData;
   plistProperties: id;
+  error: NSError = nil;
 begin
   Result:= nil;
   path:= NSHomeDirectory.stringByAppendingString( NSSTR(FAVORITE_FINDER_TAGS_FILE_PATH) );
 
-  plistData:= NSData.dataWithContentsOfFile( path );
+  plistData:= TDarwinFileUtil.dataWithContentsOfFile( path, 'TDarwinFinderModelUtil.getFavoriteTagNames()' );
   if plistData = nil then
     Exit;
 
   plistProperties:= NSPropertyListSerialization.propertyListWithData_options_format_error(
-    plistData, NSPropertyListImmutable, nil, nil );
-  if plistProperties = nil then
+    plistData, NSPropertyListImmutable, nil, @error );
+  if plistProperties = nil then begin
+    logDarwinError( 'TDarwinFinderModelUtil.getFavoriteTagNames', error );
     Exit;
+  end;
 
   Result:= plistProperties.valueForKeyPath( NSSTR('FavoriteTagNames') );
 end;
@@ -580,6 +577,7 @@ class function TDarwinFinderModelUtil.getTagsData_macOS12: NSDictionary;
 var
   plistBytes: TBytes;
   plistData: NSData;
+  error: NSError = nil;
 begin
   Result:= nil;
   plistBytes:= TDarwinFinderModelUtil.getTagsDataFromDatabase;
@@ -591,7 +589,9 @@ begin
     Exit;
 
   Result:= NSPropertyListSerialization.propertyListWithData_options_format_error(
-    plistData, NSPropertyListImmutable, nil, nil );
+    plistData, NSPropertyListImmutable, nil, @error );
+  if Result = nil then
+    logDarwinError( 'TDarwinFinderModelUtil.getTagsData_macOS12', error );
 end;
 
 class function TDarwinFinderModelUtil.getTagsData_macOS11: NSDictionary;
@@ -599,18 +599,21 @@ var
   path: NSString;
   plistData: NSData;
   plistProperties: id;
+  error: NSError = nil;
 begin
   Result:= nil;
   path:= NSHomeDirectory.stringByAppendingString( NSSTR(FINDER_TAGS_FILE_PATH_11minus) );
 
-  plistData:= NSData.dataWithContentsOfFile( path );
+  plistData:= TDarwinFileUtil.dataWithContentsOfFile( path, 'TDarwinFinderModelUtil.getTagsData_macOS11()' );
   if plistData = nil then
     Exit;
 
   plistProperties:= NSPropertyListSerialization.propertyListWithData_options_format_error(
-    plistData, NSPropertyListImmutable, nil, nil );
-  if plistProperties = nil then
+    plistData, NSPropertyListImmutable, nil, @error );
+  if plistProperties = nil then begin
+    logDarwinError( 'TDarwinFinderModelUtil.getTagsData_macOS11', error );
     Exit;
+  end;
 
   Result:= plistProperties.valueForKeyPath( NSSTR('values.FinderTagDict.value') );
 end;
@@ -622,9 +625,15 @@ class function TDarwinFinderModelUtil.getTagsDataFromDatabase: TBytes;
     subPaths: NSArray;
     uuid: NSString;
     databasePath: NSString;
+    error: NSError = nil;
   begin
     manager:= NSFileManager.defaultManager;
-    subPaths:= manager.contentsOfDirectoryAtPath_error( NSSTR_FINDER_TAGS_DATABASE_UUID_PATH, nil );
+    subPaths:= manager.contentsOfDirectoryAtPath_error( NSSTR_FINDER_TAGS_DATABASE_UUID_PATH, @error );
+    if subPaths = nil then begin
+      logDarwinError( 'TDarwinFinderModelUtil.getTagsDataFromDatabase', error );
+      Exit;
+    end;
+
     for uuid in subPaths do begin
       databasePath:= NSSTR_FINDER_TAGS_DATABASE_UUID_PATH.stringByAppendingPathComponent(uuid).stringByAppendingPathComponent(NSSTR_FINDER_TAGS_DATABASE_NAME);
       if manager.fileExistsAtPath(databasePath) then begin

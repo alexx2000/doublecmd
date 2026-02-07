@@ -33,6 +33,7 @@ uses
   uFile, uDisplayFile,
   uFileViewWorker,
   uOrderedFileView,
+  uFileSource,
   uFileView,
   uDragDropEx,
   uFileViewNotebook,
@@ -40,8 +41,7 @@ uses
 
 type
 
-  TFileViewOnDrawCell = procedure(Sender: TFileView; aCol, aRow: Integer;
-    aRect: TRect; focused: Boolean; aFile: TDisplayFile) of object;
+  TFileViewOnDrawCell = procedure( var params: TFileSourceUIParams ) of object;
 
   TRenameFileActionType=(rfatName,rfatExt,rfatFull,rfatToSeparators,rfatNextSeparated);
 
@@ -68,6 +68,9 @@ type
 {$IF (DEFINED(LCLQT) or DEFINED(LCLQT5) or DEFINED(LCLQT6)) and (LCL_FULLVERSION < 3020000)}
     procedure Hack(Data: PtrInt);
     procedure EditExit; override;
+{$ELSEIF DEFINED(LCLCOCOA)}
+    procedure CreateHandle; override;
+    procedure ChildHandlesCreated; override;
 {$ENDIF}
     function CalcButtonVisible: Boolean; override;
     function GetDefaultGlyphName: String; override;
@@ -146,7 +149,7 @@ type
     tmRenameFile: TTimer;
     FMouseRename: Boolean;
     FMouseFocus: Boolean;
-{$IFNDEF LCLWIN32}
+{$IF NOT (DEFINED(LCLWIN32) and DEFINED(LCLCOCOA))}
     FMouseEnter: Boolean;
 {$ENDIF}
     procedure AfterChangePath; override;
@@ -237,9 +240,11 @@ uses
 {$IF DEFINED(LCLGTK2)}
   Gtk2Proc,  // for ReleaseMouseCapture
   GTK2Globals,  // for DblClickTime
+{$ELSEIF DEFINED(LCLCOCOA)}
+  CocoaConfig,
 {$ENDIF}
   LCLIntf, LCLProc, LazUTF8, Forms, Dialogs, Buttons, DCOSUtils, DCStrUtils,
-  fMain, uShowMsg, uLng, uFileProperty, uFileSource, uFileSourceOperationTypes,
+  fMain, uShowMsg, uLng, uFileProperty, uFileSourceOperationTypes,
   uGlobs, uInfoToolTip, uFileSystemFileSource, uFileSourceUtil,
   uArchiveFileSourceUtil, uFormCommands, uKeyboard, uFileSourceSetFilePropertyOperation,
   uFileSystemWatcher;
@@ -304,6 +309,24 @@ end;
 procedure TEditButtonEx.EditExit;
 begin
   Application.QueueAsyncCall(@Hack, 0);
+end;
+{$ENDIF}
+
+{$IFDEF LCLCOCOA}
+procedure TEditButtonEx.CreateHandle;
+begin
+{$IF (LCL_FULLVERSION >= 4990000)}
+  CocoaConfigEdit.vertAlignCenter:= True;
+{$ENDIF}
+  inherited CreateHandle;
+end;
+
+procedure TEditButtonEx.ChildHandlesCreated;
+begin
+  inherited;
+{$IF (LCL_FULLVERSION >= 4990000)}
+  CocoaConfigEdit.vertAlignCenter:= False;
+{$ENDIF}
 end;
 {$ENDIF}
 
@@ -895,7 +918,10 @@ end;
 procedure TFileViewWithMainCtrl.MainControlEnter(Sender: TObject);
 begin
   Active := True;
-{$IFNDEF LCLWIN32}
+  {$IFDEF LCLCOCOA}
+  FMouseRename := gInplaceRename;
+  {$ENDIF}
+{$IF NOT (DEFINED(LCLWIN32) and DEFINED(LCLCOCOA))}
   FMouseEnter:= ssLeft in GetKeyShiftStateEx;
 {$ENDIF}
 end;
@@ -962,9 +988,12 @@ begin
   if not AtFileList then
     Exit;
 
-{$IF DEFINED(LCLWIN32) OR DEFINED(LCLCOCOA)}
+{$IF DEFINED(LCLWIN32)}
   FMouseFocus:= MainControl.Focused;
   SetFocus;
+{$ELSEIF DEFINED(LCLCOCOA)}
+  FMouseFocus:= MainControl.Focused;
+  MainControl.Invalidate;
 {$ELSE}
   FMouseFocus := not FMouseEnter;
   FMouseEnter := False;
@@ -1282,7 +1311,7 @@ begin
   AFile := FFiles[FHintFileIndex];
   if AFile.FSFile.Name = '..' then Exit;
 
-  HintInfo^.HintStr:= AFile.FSFile.Name;
+  HintInfo^.HintStr:= FileSource.GetFileName( AFile.FSFile );
   sHint:= GetFileInfoToolTip(FileSource, AFile.FSFile);
   if (sHint <> EmptyStr) then
     HintInfo^.HintStr:= HintInfo^.HintStr + LineEnding + sHint;
@@ -1468,9 +1497,6 @@ begin
     end;
     inherited SetFocus;
     MainControl.SetFocus;
-    {$IFDEF LCLCOCOA}
-    Active := true;
-    {$ENDIF}
   end;
 end;
 
@@ -1683,7 +1709,9 @@ begin
 
   // OnEnter don't called automatically (bug?)
   // TODO: Check on which widgetset/OS this is needed.
+  {$IF NOT DEFINED(LCLCOCOA)}
   FMainControl.OnEnter(Self);
+  {$ENDIF}
 end;
 
 procedure TFileViewWithMainCtrl.edtRenameButtonClick(Sender: TObject);

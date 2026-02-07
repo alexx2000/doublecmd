@@ -7,8 +7,8 @@ interface
 
 uses
   Classes, SysUtils, fgl, Graphics,
-  CocoaAll, CocoaUtils,
-  uDCUtils, uDarwinFile, uiCloudDriveConfig;
+  CocoaAll,
+  uDCUtils, uDarwinFile, uDarwinUtil, uiCloudDriveConfig;
 
 type
 
@@ -50,21 +50,24 @@ end;
 
 class function iCloudDriveUtil.getPlistAppIconNames(const path: String ): NSArray;
 var
-  plistPath: NSString;
+  plistPath: String;
   plistData: NSData;
   plistProperties: id;
+  error: NSError = nil;
 begin
   Result:= nil;
-  plistPath:= StrToNSString( uDCUtils.ReplaceTilde(path) );
+  plistPath:= uDCUtils.ReplaceTilde( path );
 
-  plistData:= NSData.dataWithContentsOfFile( plistPath );
+  plistData:= TDarwinFileUtil.dataWithContentsOfFile( plistPath, 'iCloudDriveUtil.getPlistAppIconNames()' );
   if plistData = nil then
     Exit;
 
   plistProperties:= NSPropertyListSerialization.propertyListWithData_options_format_error(
-    plistData, NSPropertyListImmutable, nil, nil );
-  if plistProperties = nil then
+    plistData, NSPropertyListImmutable, nil, @error );
+  if plistProperties = nil then begin
+    logDarwinError( 'iCloudDriveUtil.getPlistAppIconNames', error );
     Exit;
+  end;
 
   Result:= plistProperties.valueForKeyPath( NSSTR('BRContainerIcons') );
 end;
@@ -87,7 +90,7 @@ begin
   if appIconNames = nil then
     Exit;
 
-  appResourcePath:= StrToNSString( uDCUtils.ReplaceTilde(iCloudDriveConfig.path.container) + '/' + appFileName + '/' );
+  appResourcePath:= StringToNSString( uDCUtils.ReplaceTilde(iCloudDriveConfig.path.container) + '/' + appFileName + '/' );
 
   appImage:= NSImage.new;
   for appIconName in appIconNames do begin
@@ -106,6 +109,7 @@ var
   appPath: NSString;
   appBasePath: NSString;
   app: TiCloudApp;
+  error: NSError = nil;
 
   function pass( appName: NSString ): Boolean;
   var
@@ -124,9 +128,12 @@ var
   function contentCountOfApp( appPath: NSString ): Integer;
   var
     filesOfApp: NSArray;
+    error: NSError = nil;
   begin
     appPath:= appPath.stringByAppendingString( NSSTR('/Documents') );
-    filesOfApp:= manager.contentsOfDirectoryAtPath_error( appPath, nil );
+    filesOfApp:= manager.contentsOfDirectoryAtPath_error( appPath, @error );
+    if filesOfApp = nil then
+      logDarwinError( 'iCloudDriveUtil.createAllApps.contentCountOfApp', error );
     Result:= filesOfApp.count;
   end;
 
@@ -134,7 +141,12 @@ begin
   Result:= TiCloudApps.Create;
   appBasePath:= NSSTR( IncludeTrailingPathDelimiter(uDCUtils.ReplaceTilde(iCloudDriveConfig.path.base)) );
   manager:= NSFileManager.defaultManager;
-  filesInBasePath:= manager.contentsOfDirectoryAtPath_error( appBasePath, nil );
+  filesInBasePath:= manager.contentsOfDirectoryAtPath_error( appBasePath, @error );
+  if filesInBasePath = nil then begin
+    logDarwinError( 'iCloudDriveUtil.createAllApps', error );
+    Exit;
+  end;
+
   for appName in filesInBasePath do begin
     if pass(appName) then
       continue;

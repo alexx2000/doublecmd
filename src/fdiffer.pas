@@ -37,6 +37,10 @@ type
 
   TStatusBar = class(TKASStatusBar);
 
+  { state update notify }
+
+  TDifferFormOnUpdateHandler = procedure ( const form: TCustomForm );
+
   { TfrmDiffer }
 
   TfrmDiffer = class(TAloneForm, IFormCommands)
@@ -239,7 +243,8 @@ type
     FCommands: TFormCommands;
     FLeftLen, FRightLen: Integer;
     FSearchOptions: TEditSearchOptions;
-private
+    FOnUpdate: TDifferFormOnUpdateHandler;
+  private
     procedure ShowDialog;
     procedure ShowIdentical;
     procedure ShowTextIdentical;
@@ -262,6 +267,7 @@ private
     procedure ShowFirstDifference(Data: PtrInt);
     procedure SynDiffEditLeftStatusChange(Sender: TObject; Changes: TSynStatusChanges);
     procedure SynDiffEditRightStatusChange(Sender: TObject; Changes: TSynStatusChanges);
+    procedure DoOnUpdate;
 
     property Commands: TFormCommands read FCommands implements IFormCommands;
   protected
@@ -270,6 +276,8 @@ private
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
     procedure AfterConstruction; override;
+
+    property OnUpdate: TDifferFormOnUpdateHandler write FOnUpdate;
   published
     procedure cm_CopyLeftToRight(const Params: array of string);
     procedure cm_CopyRightToLeft(const Params: array of string);
@@ -297,7 +305,11 @@ implementation
 uses
   Math, LCLType, LazFileUtils, LConvEncoding, SynEditTypes, uHash, uLng, uGlobs,
   uShowMsg, DCClassesUtf8, dmCommonData, uDCUtils, uConvEncoding, uAdministrator,
-  LCLStrConsts, uFileProcs;
+  LCLVersion, LCLStrConsts, uFileProcs
+{$IFDEF DARWIN}
+  , uDarwinApplication, uEarlyConfig
+{$ENDIF}
+  ;
 
 const
   HotkeysCategory = 'Differ';
@@ -372,6 +384,7 @@ begin
 
         BinaryCompare.OnFinish:= @BinaryCompareFinish;
         BinaryCompare.Start;
+        DoOnUpdate;
       end;
     end
     else begin
@@ -390,6 +403,7 @@ begin
 
         actStartCompare.Enabled := False;
         actCancelCompare.Enabled := True;
+        DoOnUpdate;
 
         Diff.Execute(
                      PInteger(@HashListLeft[0]),
@@ -434,6 +448,7 @@ begin
         actCancelCompare.Enabled := False;
         Screen.EndWaitCursor;
         Dec(ScrollLock);
+        DoOnUpdate;
       end;
       if actLineDifferences.Checked then
       begin
@@ -476,7 +491,10 @@ end;
 procedure TfrmDiffer.actOpenLeftExecute(Sender: TObject);
 begin
   dmComData.OpenDialog.FileName:= edtFileNameLeft.Text;
-  dmComData.OpenDialog.Filter:= AllFilesMask;
+  dmComData.OpenDialog.Filter:= EmptyStr;
+{$if lcl_fullversion >= 4990000}
+  dmComData.OpenDialog.OptionsEx:= [ofAllowsFilePackagesContents];
+{$endif}
   if dmComData.OpenDialog.Execute then
   begin
     edtFileNameLeft.Text:= dmComData.OpenDialog.FileName;
@@ -487,7 +505,10 @@ end;
 procedure TfrmDiffer.actOpenRightExecute(Sender: TObject);
 begin
   dmComData.OpenDialog.FileName:= edtFileNameRight.Text;
-  dmComData.OpenDialog.Filter:= AllFilesMask;
+  dmComData.OpenDialog.Filter:= EmptyStr;
+{$if lcl_fullversion >= 4990000}
+  dmComData.OpenDialog.OptionsEx:= [ofAllowsFilePackagesContents];
+{$endif}
   if dmComData.OpenDialog.Execute then
   begin
     edtFileNameRight.Text:= dmComData.OpenDialog.FileName;
@@ -530,6 +551,10 @@ end;
 procedure TfrmDiffer.actSaveLeftAsExecute(Sender: TObject);
 begin
   dmComData.SaveDialog.FileName:= edtFileNameLeft.FileName;
+  dmComData.SaveDialog.Filter:= EmptyStr;
+{$if lcl_fullversion >= 4990000}
+  dmComData.SaveDialog.OptionsEx:= [ofAllowsFilePackagesContents];
+{$endif}
   if dmComData.SaveDialog.Execute then
   begin
     PushPop(FElevate);
@@ -545,6 +570,10 @@ end;
 procedure TfrmDiffer.actSaveRightAsExecute(Sender: TObject);
 begin
   dmComData.SaveDialog.FileName:= edtFileNameRight.FileName;
+  dmComData.SaveDialog.Filter:= EmptyStr;
+{$if lcl_fullversion >= 4990000}
+  dmComData.SaveDialog.OptionsEx:= [ofAllowsFilePackagesContents];
+{$endif}
   if dmComData.SaveDialog.Execute then
   begin
     PushPop(FElevate);
@@ -632,6 +661,7 @@ begin
       BinaryCompare:= nil;
     end;
   end;
+  DoOnUpdate;
 end;
 
 procedure TfrmDiffer.actAboutExecute(Sender: TObject);
@@ -740,6 +770,9 @@ end;
 
 procedure TfrmDiffer.FormCreate(Sender: TObject);
 begin
+  if gIconsInMenus then
+    Menu.Images:= dmComData.ilEditorImages;
+
   ScrollLock:= 0;
   Diff:= TDiff.Create(Self);
   SynDiffEditLeft:= TSynDiffEdit.Create(Self);
@@ -871,6 +904,7 @@ begin
   actStartCompare.Enabled := True;
   actCancelCompare.Enabled := False;
   actBinaryCompare.Enabled := True;
+  DoOnUpdate;
   if FShowIdentical then
   begin
     CloseProgressDialog;
@@ -1426,6 +1460,10 @@ begin
   ToolBar.ImagesWidth:= gToolIconsSize;
   ToolBar.SetButtonSize(gToolIconsSize + ScaleX(6, 96),
                         gToolIconsSize + ScaleY(6, 96));
+{$IFDEF DARWIN}
+  if gModernUI and TDarwinApplicationUtil.supportsModernForm then
+    ToolBar.Hide;
+{$ENDIF}
 end;
 
 procedure TfrmDiffer.BuildHashList(bLeft, bRight: Boolean);
@@ -1712,6 +1750,12 @@ begin
     finally
       Dec(ScrollLock);
     end;
+end;
+
+procedure TfrmDiffer.doOnUpdate;
+begin
+  if FOnUpdate <> nil then
+    FOnUpdate(self);
 end;
 
 procedure TfrmDiffer.CMThemeChanged(var Message: TLMessage);

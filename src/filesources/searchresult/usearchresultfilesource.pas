@@ -5,13 +5,17 @@ unit uSearchResultFileSource;
 interface
 
 uses
-  Classes, SysUtils,
+  Classes, SysUtils, Graphics,
   uFile,
   uFileSource, uFileSourceManager,
   uMultiListFileSource,
   uFileSourceOperationTypes,
   uFileSourceOperation,
-  uFileSourceProperty;
+  uFileSourceProperty
+  {$IFDEF DARWIN}
+  , uDarwinFile, uDarwinImage, uDCUtils
+  {$ENDIF}
+  ;
 
 type
 
@@ -26,7 +30,11 @@ type
   { TSearchResultFileSource }
 
   TSearchResultFileSource = class(TMultiListFileSource, ISearchResultFileSource)
+  protected
+    _displayName: String;
   public
+    constructor Create( const displayName: String );
+
     function GetProcessor: TFileSourceProcessor; override;
 
     function GetRootDir(sPath : String): String; override;
@@ -38,6 +46,9 @@ type
     function CreateListOperation(TargetPath: String): TFileSourceOperation; override;
 
     function GetLocalName(var aFile: TFile): Boolean; override;
+
+    function GetCustomIcon(const path: String; const iconSize: Integer): TBitmap; override; overload;
+    function GetDisplayFileName(aFile: TFile): String; override;
   end;
 
 implementation
@@ -79,6 +90,12 @@ begin
   Inherited;
 end;
 
+constructor TSearchResultFileSource.Create(const displayName: String);
+begin
+  inherited Create;
+  _displayName:= displayName;
+end;
+
 function TSearchResultFileSource.GetProcessor: TFileSourceProcessor;
 begin
   Result:= searchResultFileSourceProcessor;
@@ -117,6 +134,32 @@ begin
     Result:= FileSource.GetLocalName(aFile)
   else
     Result:= True;
+end;
+
+function TSearchResultFileSource.GetCustomIcon(
+  const path: String;
+  const iconSize: Integer ): TBitmap;
+{$IFDEF DARWIN}
+const
+  ICON_PATH = '$COMMANDER_PATH/pixmaps/macOS/magnifyingglass.png';
+var
+  iconPath: String;
+begin
+  iconPath:= mbExpandFileName( ICON_PATH );
+  Result:= darwinImageCacheForPath.copyBitmapForFileContent( iconPath, iconSize, True );
+end;
+{$ELSE}
+begin
+  Result:= nil;
+end;
+{$ENDIF}
+
+function TSearchResultFileSource.GetDisplayFileName(aFile: TFile): String;
+begin
+  if aFile.FullPath = self.GetRootDir() then
+    Result:= _displayName
+  else
+    Result:= aFile.Name;
 end;
 
 initialization

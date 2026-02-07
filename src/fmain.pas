@@ -983,11 +983,6 @@ var
   LastActiveWindow: TCustomForm = nil;
 {$ENDIF}
 
-{$IF (DEFINED(LCLQT) or DEFINED(LCLQT5) or DEFINED(LCLQT6)) and not DEFINED(MSWINDOWS)}
-var
-  CloseQueryResult: Boolean = False;
-{$ENDIF}
-
 {$IFDEF LCLGTK2}
 var
   MinimizedWindowButton: Boolean = False;
@@ -1142,6 +1137,15 @@ begin
   Application.AddOnKeyDownBeforeHandler( @GlobalMacOSKeyDownHandler );
   {$ENDIF}
 
+  {$IF DEFINED(LCLQT5) OR DEFINED(LCLQT6)}
+  // Save original captions
+  for I:= 0 to mnuMain.Items.Count - 1 do
+  begin
+    mnuMain.Items[I].Hint:= mnuMain.Items[I].Caption;
+  end;
+  mnuMain.Tag:= PtrInt(ktaNone);
+  {$ENDIF}
+
   ConvertToolbarBarConfig(gpCfgDir + 'default.bar');
   CreateDefaultToolbar;
   sStaticTitleBarString := GenerateTitle();
@@ -1237,8 +1241,6 @@ begin
   TDriveWatcher.AddObserver(@OnDriveWatcherEvent);
 
 {$IF (DEFINED(LCLQT) or DEFINED(LCLQT5) or DEFINED(LCLQT6)) and not DEFINED(MSWINDOWS)}
-  // Fixes bug - [0000033] "DC cancels shutdown in KDE"
-  // http://doublecmd.sourceforge.net/mantisbt/view.php?id=33
   QEventHook:= QObject_hook_create(TQtWidget(Self.Handle).Widget);
   QObject_hook_hook_events(QEventHook, @QObjectEventFilter);
 {$ENDIF}
@@ -1868,10 +1870,6 @@ begin
       end;
     end;
   end;
-
-{$IF (DEFINED(LCLQT) or DEFINED(LCLQT5) or DEFINED(LCLQT6)) and not DEFINED(MSWINDOWS)}
-  CloseQueryResult:= CanClose;
-{$ENDIF}
 end;
 
 procedure TfrmMain.FormDropFiles(Sender: TObject; const FileNames: array of String);
@@ -4219,6 +4217,9 @@ var
 begin
   SetDragCursor(Shift);
 
+  if ActiveControl = nil then
+    ActiveFrame.SetFocus;
+
   // Either left or right panel has to be focused.
   if not FrameLeft.Focused and
      not FrameRight.Focused then
@@ -4840,6 +4841,9 @@ begin
         ANoteBook.Hint := FileView.CurrentPath;
       end;
 
+      if Assigned(onFileViewUpdated) then
+        onFileViewUpdated(FileView);
+
       {if (fspDirectAccess in FileView.FileSource.GetProperties) then
         begin
           if gTermWindow and Assigned(Cons) then
@@ -5167,14 +5171,8 @@ begin
     FileViewFlags := [fvfDelayLoadingFiles];
   if sType = 'columns' then begin
     Result := TColumnsFileView.Create(Page, AConfig, ANode, FileViewFlags);
-    {$IFDEF DARWIN}
-    TColumnsFileView(Result).OnDrawCell:= @darwinFileViewDrawHandler.OnDrawCell;
-    {$ENDIF}
   end else if sType = 'brief' then begin
     Result := TBriefFileView.Create(Page, AConfig, ANode, FileViewFlags);
-    {$IFDEF DARWIN}
-    TBriefFileView(Result).OnDrawCell:= @darwinFileViewDrawHandler.OnDrawCell;
-    {$ENDIF}
   end else if sType = 'thumbnails' then
     Result := TThumbFileView.Create(Page, AConfig, ANode, FileViewFlags)
   else begin
@@ -5826,6 +5824,29 @@ begin
       UpdateFreeSpace(fpLeft, True);
       UpdateFreeSpace(fpRight, True);
     end;
+
+{$IF DEFINED(LCLQT5) OR DEFINED(LCLQT6)}
+    // https://github.com/doublecmd/doublecmd/issues/1327
+    if mnuMain.Tag <> PtrInt(gKeyTyping[ktmAlt]) then
+    begin
+      if gKeyTyping[ktmAlt] = ktaNone then
+      begin
+        // Enable menu shortcuts
+        for I:= 0 to mnuMain.Items.Count - 1 do
+        begin
+          mnuMain.Items[I].Caption:= mnuMain.Items[I].Hint;
+        end;
+      end
+      else begin
+        // Disable menu shortcuts
+        for I:= 0 to mnuMain.Items.Count - 1 do
+        begin
+          mnuMain.Items[I].Caption:= StripHotkey(mnuMain.Items[I].Hint);
+        end;
+      end;
+      mnuMain.Tag:= PtrInt(gKeyTyping[ktmAlt])
+    end;
+{$ENDIF}
 
     UpdateHotDirIcons; // Preferable to be loaded even if not required in popupmenu *because* in the tree it's a must, especially when checking for missing directories
     ShowTrayIcon(gAlwaysShowTrayIcon);
@@ -6564,6 +6585,14 @@ var
   DrivePath: String;
   DrivePathLen: PtrInt;
   LongestPathLen: Integer = 0;
+
+  function sameAddress( const drive: PDrive ): Boolean; inline;
+  begin
+    if (drive^.DriveType=dtVirtual) and (drive^.DeviceId=Address) then
+      Exit( True );
+    Result:= Address.IsEmpty;
+  end;
+
 begin
   Result := -1;
 
@@ -6578,7 +6607,8 @@ begin
         if Pos(Address, DrivesList[I]^.Path) = 1 then
           Exit(I);
       end
-      else begin
+      else if sameAddress(DrivesList[I]) then
+      begin
         DrivePath := UTF8UpperCase(DrivesList[I]^.Path);
         DrivePathLen := UTF8Length(DrivePath);
         if (DrivePathLen > LongestPathLen) and IsInPath(DrivePath, Path, True, True) then
@@ -7395,15 +7425,6 @@ begin
     QEventApplicationPaletteChange:
     begin
       ThemeServices.IntfDoOnThemeChange;
-    end;
-    QEventClose:
-    begin
-      TQtWidget(Self.Handle).SlotClose;
-      Result:= CloseQueryResult;
-      if Result then
-        QEvent_accept(Event)
-      else
-        QEvent_ignore(Event);
     end;
   end;
 end;

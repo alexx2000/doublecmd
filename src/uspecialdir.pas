@@ -103,7 +103,7 @@ uses
 
   //DC
   DCOSUtils, uDCUtils, uGlobsPaths, fmain, uLng, uGlobs, uHotDir, uOSUtils,
-  DCStrUtils;
+  DCStrUtils, uOSForms;
 
 { The special path are sorted first by type of special path they represent (DC, Windows, Environment...)
   Then, by alphabetical order.
@@ -341,7 +341,7 @@ begin
       begin
         //by default, let's try to initialise dir browser to current dir value and if it's not present, let's take the current path of the active frame
         if MaybeResultingOutputPath='' then MaybeResultingOutputPath:=frmMain.ActiveFrame.CurrentPath;
-        if SelectDirectory(rsSelectDir, mbExpandFileName(MaybeResultingOutputPath), sSelectedPath, False) then MaybeResultingOutputPath:=sSelectedPath;
+        if SelectDirectoryEx(rsSelectDir, mbExpandFileName(MaybeResultingOutputPath), sSelectedPath, False) then MaybeResultingOutputPath:=sSelectedPath;
       end;
 
     100..1099: //Use...

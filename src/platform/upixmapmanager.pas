@@ -56,7 +56,8 @@ uses
   {$ELSEIF DEFINED(UNIX)}
   , DCFileAttributes
     {$IF DEFINED(DARWIN)}
-    , CocoaAll, MacOSAll, CocoaUtils, uDarwinUtil, uDarwinFile
+    , CocoaAll, MacOSAll
+    , uDarwinImage, uDarwinUtil, uDarwinFile
     {$ELSEIF NOT DEFINED(HAIKU)}
     , Math, Contnrs, uGio, uXdg
       {$IFDEF GTK2_FIX}
@@ -127,9 +128,7 @@ type
     FiEmblemOffline: PtrInt;
     FiShortcutIconID: PtrInt;
     FOneDrivePath: TStringList;
-    {$ELSEIF DEFINED(DARWIN)}
-    FUseSystemTheme: Boolean;
-    {$ELSEIF DEFINED(UNIX) AND NOT DEFINED(HAIKU)}
+    {$ELSEIF DEFINED(UNIX) AND NOT (DEFINED(DARWIN) OR DEFINED(HAIKU))}
     {en
        Maps file extension to MIME icon name(s).
     }
@@ -376,9 +375,6 @@ procedure LoadPixMapManager;
 
 function AdjustIconSize(ASize: Integer; APixelsPerInch: Integer): Integer;
 
-function StretchBitmap(var bmBitmap : Graphics.TBitmap; iIconSize : Integer;
-                       clBackColor : TColor; bFreeAtEnd : Boolean = False) : Graphics.TBitmap;
-
 procedure AssignRetinaBitmapForControl(
   const button: TCustomSpeedButton;
   const imageSize: Integer;
@@ -388,11 +384,6 @@ procedure AssignRetinaBitmapForControl(
   const imageControl: TCustomImage;
   const imageSize: Integer;
   bitmap: Graphics.TBitmap);
-
-{$IF DEFINED(DARWIN)}
-function NSImageToTBitmap( const image:NSImage ): TBitmap;
-function getBestNSImageWithSize( const srcImage:NSImage; const size:Integer ): NSImage;
-{$ENDIF}
 
 implementation
 
@@ -469,6 +460,15 @@ begin
       raise;
     end;
   end;
+end;
+
+function StretchRetinaBitmap(var bmBitmap : Graphics.TBitmap; iIconSize : Integer;
+                       clBackColor : TColor; bFreeAtEnd : Boolean = False) : Graphics.TBitmap;
+var
+  bitmapSize: Integer;
+begin
+  bitmapSize := Round(iIconSize * findScaleFactorByFirstForm());
+  StretchBitmap( bmBitmap, bitmapSize, clBackColor, bFreeAtEnd );
 end;
 
 procedure AssignRetinaBitmapForControl(
@@ -686,13 +686,15 @@ begin
   end;
 
   if Stretch and Assigned(bmStandartBitmap) then
-    Result := StretchBitmap(bmStandartBitmap, iIconSize, clBackColor, True)
+    Result := StretchRetinaBitmap(bmStandartBitmap, iIconSize, clBackColor, True)
   else
     Result := bmStandartBitmap;
 end;
 
 function TPixMapManager.LoadIconThemeBitmap(AIconName: String; AIconSize: Integer): Graphics.TBitmap;
 begin
+  if AIconSize = 0 then AIconSize := gIconsSize;
+
   FPixmapsLock.Acquire;
   try
     Result := LoadIconThemeBitmapLocked(AIconName, AIconSize);
@@ -1164,78 +1166,13 @@ end;
 
 {$ELSEIF DEFINED(DARWIN)}
 
-function getBestNSImageWithSize( const srcImage:NSImage; const size:Integer ): NSImage;
-var
-  bestRect: NSRect;
-  bestImageRep: NSImageRep;
-  bestImage: NSImage;
-begin
-  Result := nil;
-  if srcImage=nil then exit;
-
-  bestRect.origin.x := 0;
-  bestRect.origin.y := 0;
-  bestRect.size.width := size;
-  bestRect.size.height := size;
-  bestImageRep:= srcImage.bestRepresentationForRect_context_hints( bestRect, nil, nil );
-
-  bestImage:= NSImage.Alloc.InitWithSize( bestImageRep.size );
-  bestImage.AddRepresentation( bestImageRep );
-
-  Result := bestImage;
-end;
-
-function getImageFileBestNSImage( const filename:NSString; const size:Integer ): NSImage;
-var
-  srcImage: NSImage;
-begin
-  Result:= nil;
-  try
-    srcImage:= NSImage.Alloc.initByReferencingFile( filename );
-    Result:= getBestNSImageWithSize( srcImage, size );
-  finally
-    if Assigned(srcImage) then srcImage.release;
-  end;
-end;
-
-function NSImageToTBitmap( const image:NSImage ): TBitmap;
-var
-  nsbitmap: NSBitmapImageRep;
-  tempData: NSData;
-  tempStream: TBlobStream = nil;
-  tempBitmap: TPortableNetworkGraphic = nil;
-  bitmap: TBitmap;
-begin
-  Result:= nil;
-  if image=nil then exit;
-
-  try
-    nsbitmap:= NSBitmapImageRep.imageRepWithData( image.TIFFRepresentation );
-    tempData:= nsbitmap.representationUsingType_properties( NSPNGFileType, nil );
-    tempStream:= TBlobStream.Create( tempData.Bytes, tempData.Length );
-    tempBitmap:= TPortableNetworkGraphic.Create;
-    tempBitmap.LoadFromStream( tempStream );
-    bitmap:= TBitmap.Create;
-    bitmap.Assign( tempBitmap );
-    Result:= bitmap;
-  finally
-    FreeAndNil(tempBitmap);
-    FreeAndNil(tempStream);
-  end;
-end;
-
 function TPixMapManager.LoadImageFileBitmap( const filename:String; const size:Integer ): TBitmap;
 var
   image: NSImage;
 begin
   Result:= nil;
-  image:= nil;
-  try
-    image:= getImageFileBestNSImage( StringToNSString(filename), size );
-    if Assigned(image) then Result:= NSImageToTBitmap( image );
-  finally
-    if Assigned(image) then image.release;
-  end;
+  image:= TDarwinImageUtil.getBestFromFileContentWithSize( filename, size );
+  Result:= TDarwinImageUtil.toBitmap( image );
 end;
 
 function TPixMapManager.CheckAddFileUniqueIcon(AFullPath: String;
@@ -1260,8 +1197,8 @@ begin
     if image = nil then
       Exit;
 
-    image:= getBestNSImageWithSize(image, AIconSize);
-    bmpBitmap:= NSImageToTBitmap(image);
+    image:= TDarwinImageUtil.getBestWithSize( image, AIconSize );
+    bmpBitmap:= TDarwinImageUtil.toBitmap(image);
 
     fileIndex := FPixmapsFileNames.Find(key);
     if fileIndex >= 0 then begin
@@ -1509,58 +1446,12 @@ end;
 
 function TPixMapManager.GetMimeIcon(AFileExt: String; AIconSize: Integer): PtrInt;
 var
-  I: Integer;
-  nData: NSData;
-  nImage: NSImage;
-  bestRect: NSRect;
-  nRepresentations: NSArray;
-  nImageRep: NSImageRep;
-  WorkStream: TBlobStream;
-  tfBitmap: TTiffImage;
-  bmBitmap: TBitmap;
+  bitmap: TBitmap;
 begin
   Result:= -1;
-  if not FUseSystemTheme then Exit;
-  nImage:= NSWorkspace.sharedWorkspace.iconForFileType(NSSTR(PChar(AFileExt)));
-  // Try to find best representation for requested icon size
-  bestRect.origin.x:= 0;
-  bestRect.origin.y:= 0;
-  bestRect.size.width:= AIconSize;
-  bestRect.size.height:= AIconSize;
-  nImageRep:= nImage.bestRepresentationForRect_context_hints(bestRect, nil, nil);
-  if Assigned(nImageRep) then
-  begin
-    nImage:= NSImage.Alloc.InitWithSize(nImageRep.Size);
-    nImage.AddRepresentation(nImageRep);
-  end
-  // Try old method
-  else begin
-    nRepresentations:= nImage.Representations;
-    for I:= nRepresentations.Count - 1 downto 0 do
-    begin
-      nImageRep:= NSImageRep(nRepresentations.objectAtIndex(I));
-      if (AIconSize <> nImageRep.Size.Width) then
-        nImage.removeRepresentation(nImageRep);
-    end;
-    if nImage.Representations.Count = 0 then Exit;
-  end;
-  nData:= nImage.TIFFRepresentation;
-  tfBitmap:= TTiffImage.Create;
-  WorkStream:= TBlobStream.Create(nData.Bytes, nData.Length);
-  try
-    tfBitmap.LoadFromStream(WorkStream);
-    bmBitmap:= TBitmap.Create;
-    try
-      bmBitmap.Assign(tfBitmap);
-      Result:= FPixmapList.Add(bmBitmap);
-    except
-      bmBitmap.Free;
-    end;
-  finally
-    tfBitmap.Free;
-    nImage.Release;
-    WorkStream.Free;
-  end;
+  bitmap:= TDarwinImageUtil.getBitmapForExt( AFileExt, AIconSize );
+  if Assigned(bitmap) then
+    Result:= FPixmapList.Add( bitmap );
 end;
 {$ENDIF}
 
@@ -1716,9 +1607,7 @@ begin
   FPixmapsFileNames := TStringHashListUtf8.Create(True);
   FPixmapList := TFPList.Create;
 
-  {$IF DEFINED(DARWIN)}
-  FUseSystemTheme:= NSAppKitVersionNumber >= 1038;
-  {$ELSEIF DEFINED(UNIX) AND NOT DEFINED(HAIKU)}
+  {$IF DEFINED(UNIX) AND NOT (DEFINED(DARWIN) OR DEFINED(HAIKU))}
   FExtToMimeIconName := TFPDataHashTable.Create;
   FHomeFolder := IncludeTrailingBackslash(GetHomeDir);
   {$ENDIF}
@@ -2869,7 +2758,7 @@ begin
   //  if need stretch icon
   if (IconSize <> 16) and (IconSize <> 24) and (IconSize <> 32) then
     begin
-      Result := StretchBitmap(ABitmap, IconSize, clBackColor, False);
+      Result := StretchRetinaBitmap(ABitmap, IconSize, clBackColor, False);
     end
   else
     begin
@@ -2940,7 +2829,7 @@ begin
     //  if need stretch icon
     if (IconSize <> gIconsSize) then
       begin
-        Result := StretchBitmap(Result, IconSize, clBackColor, True);
+        Result := StretchRetinaBitmap(Result, IconSize, clBackColor, True);
       end;
   end;
 end;
@@ -2953,7 +2842,7 @@ begin
     //  if need stretch icon
     if (IconSize <> gIconsSize) then
       begin
-        Result := StretchBitmap(Result, IconSize, clBackColor, True);
+        Result := StretchRetinaBitmap(Result, IconSize, clBackColor, True);
       end;
   end;
 end;
