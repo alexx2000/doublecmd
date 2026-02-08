@@ -22,7 +22,8 @@ concurrency:
 jobs:
   build-win:
     runs-on: windows-latest
-    environment: ${{ vars.BODY }}
+    environment:
+      name: BODY
     steps:
     - name: Checkout source
       uses: actions/checkout@v6
@@ -51,6 +52,7 @@ jobs:
         body: ${{ vars.BODY }}
         overwrite: true
         file_glob: true
+
 
 
 
