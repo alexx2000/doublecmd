@@ -15,6 +15,9 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  BODY: ${{ vars.BODY }}
+
 jobs:
   build-win:
     runs-on: windows-latest
@@ -47,6 +50,7 @@ jobs:
         body: ${{ env.BODY }}
         overwrite: true
         file_glob: true
+
 
 
 
