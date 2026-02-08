@@ -19,25 +19,23 @@ jobs:
   build-win:
     runs-on: windows-latest
     environment: BODY
-    env:
-      BODY: ${{ vars.BODY }}
     steps:
+    - name: Install Lazarus
+      uses: doublecmd/lazarus-install@win
+      with:
+        lazarus-version: "stable"
+
     - name: Checkout source
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
-    - name: List all available environment variables 1
-      run: env
-
-    - name: List all available environment variables 2
-      run: echo ${{ vars.BODY }}
-      shell: bash       
-
+    - name: Build packages
+      run: ./.github/scripts/create_snapshot.bat
 
     - name: Save revision number
       run: echo "REVISION=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
-      shell: bash 
+      shell: bash
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
@@ -50,16 +48,3 @@ jobs:
         body: ${{ vars.BODY }}
         overwrite: true
         file_glob: true
-
-
-
-
-
-
-
-
-
-
-
-
-
