@@ -11,6 +11,10 @@ on:
     branches:
       - master
 
+env:
+  # Setting an environment variable with the value of a configuration variable
+  BODY: ${{ vars.BODY }}
+
 concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
@@ -47,6 +51,7 @@ jobs:
         body: ${{ vars.BODY }}
         overwrite: true
         file_glob: true
+
 
 
 
