@@ -11,10 +11,6 @@ on:
     branches:
       - master
 
-env:
-  # Setting an environment variable with the value of a configuration variable
-  BODY: ${{ vars.REPOSITORY_BODY }}
-
 concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
@@ -22,8 +18,9 @@ concurrency:
 jobs:
   build-win:
     runs-on: windows-latest
-    environment:
-      name: BODY
+    environment: BODY
+    env:
+      BODY: ${{ vars.BODY }}
     steps:
     - name: Checkout source
       uses: actions/checkout@v6
@@ -52,6 +49,7 @@ jobs:
         body: ${{ vars.BODY }}
         overwrite: true
         file_glob: true
+
 
 
 
