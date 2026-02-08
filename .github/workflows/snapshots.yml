@@ -40,7 +40,7 @@ jobs:
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
-        repo_name: doublecmd/snapshots
+        repo_name: alexx2000/snapshots
         repo_token: ${{ secrets.SNAPSHOTS }}
         file: doublecmd-release/*
         release_name: Revision ${{ env.REVISION }}
@@ -48,3 +48,4 @@ jobs:
         overwrite: true
         file_glob: true
         tag: snapshot
+
