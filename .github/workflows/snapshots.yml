@@ -16,14 +16,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-mac:
-    runs-on: macos-14
+  build-lin:
+    runs-on: ubuntu-22.04
     environment: snapshots
     steps:
     - name: Install Free Pascal
-      uses: doublecmd/lazarus-install@mac
-      with:
-        lazarus-version: "stable"
+      run: sudo apt install fpc patchelf
 
     - name: Get Lazarus source
       uses: actions/checkout@v6
@@ -38,21 +36,18 @@ jobs:
     - name: Create Lazarus config
       run: |
            sudo mkdir -p /etc/lazarus
-           sudo cp tools/install/macosx/environmentoptions.xml /etc/lazarus/environmentoptions.xml
-           sudo sed -i -e "s|_PPCARCH_|fpc|g; s|/Developer/lazarus|/usr/local/share/lazarus|g" /etc/lazarus/environmentoptions.xml
+           sudo cp tools/install/linux/environmentoptions.xml /etc/lazarus/environmentoptions.xml
+           sudo sed -i -e "s|__LAZARUSDIR__|/usr/local/share/lazarus|g" /etc/lazarus/environmentoptions.xml
 
     - name: Checkout source
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
-    - name: Prepare source
-      run: sed -i -e "s|BOX_CLIENT_SECRET = '\*'|BOX_CLIENT_SECRET = '$BOX_CLIENT_SECRET'|g" plugins/wfx/MacCloud/src/drivers/oauth2/box/uboxclient.pas
-      env:
-        BOX_CLIENT_SECRET: ${{ secrets.BOX_CLIENT_SECRET }}
-
     - name: Build packages
-      run: ./.github/scripts/create_snapshot.sh
+      run: |
+           chmod +x ./.github/scripts/create_snapshot.lnx
+           ./.github/scripts/create_snapshot.lnx
 
     - name: Save revision number
       run: echo "REVISION=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
@@ -63,46 +58,12 @@ jobs:
       with:
         repo_name: doublecmd/snapshots
         repo_token: ${{ secrets.SNAPSHOTS }}
-        file: doublecmd-release/doublecmd*.dmg
+        file: doublecmd-release/doublecmd*.tar.xz
         release_name: Revision ${{ env.REVISION }}
         tag: ${{ env.REVISION }}
         body: ${{ vars.BODY }}
         overwrite: true
         file_glob: true
+  
 
-  build-win:
-    runs-on: windows-latest
-    environment: snapshots
-    steps:
-    - name: Install Lazarus
-      uses: doublecmd/lazarus-install@win
-      with:
-        lazarus-version: "stable"
-
-    - name: Checkout source
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-
-    - name: Restore timestamps
-      uses: chetan/git-restore-mtime-action@v2
-
-    - name: Build packages
-      run: ./.github/scripts/create_snapshot.bat
-
-    - name: Save revision number
-      run: echo "REVISION=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
-      shell: bash
-
-    - name: Upload binaries to snapshots
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_name: doublecmd/snapshots
-        repo_token: ${{ secrets.SNAPSHOTS }}
-        file: doublecmd-release/*
-        release_name: Revision ${{ env.REVISION }}
-        tag: ${{ env.REVISION }}
-        body: ${{ vars.BODY }}
-        overwrite: true
-        file_glob: true
 
