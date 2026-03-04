@@ -33,6 +33,7 @@ jobs:
            export LCL_PLATFORM=gtk3
            make all
            sudo make install
+           sudo cp lcl/units/x86_64-linux/gtk3/lcl.compiled /usr/local/share/lazarus/lcl/units/x86_64-linux/gtk3/
 
     - name: Create Lazarus config
       run: |
@@ -66,5 +67,6 @@ jobs:
         overwrite: true
         file_glob: true
   
+
 
 
