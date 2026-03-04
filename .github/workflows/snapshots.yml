@@ -30,6 +30,7 @@ jobs:
 
     - name: Build and install Lazarus
       run: |
+           export LCL_PLATFORM=gtk3
            make all
            sudo make install
 
@@ -65,4 +66,5 @@ jobs:
         overwrite: true
         file_glob: true
   
+
 
