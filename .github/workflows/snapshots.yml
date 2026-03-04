@@ -30,10 +30,8 @@ jobs:
 
     - name: Build and install Lazarus
       run: |
-           export LCL_PLATFORM=gtk3
            make all
            sudo make install
-           sudo cp lcl/units/x86_64-linux/gtk3/lcl.compiled /usr/local/share/lazarus/lcl/units/x86_64-linux/gtk3/
 
     - name: Create Lazarus config
       run: |
@@ -47,9 +45,7 @@ jobs:
         fetch-depth: 0
 
     - name: Build packages
-      run: |
-           chmod +x ./.github/scripts/create_snapshot.lnx
-           ./.github/scripts/create_snapshot.lnx
+      run: ./.github/scripts/create_snapshot.lnx
 
     - name: Save revision number
       run: echo "REVISION=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
@@ -67,6 +63,7 @@ jobs:
         overwrite: true
         file_glob: true
   
+
 
 
 
