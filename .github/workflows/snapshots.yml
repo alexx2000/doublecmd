@@ -31,9 +31,9 @@ jobs:
 
     - name: Build and install Lazarus
       run: |
-           echo "-XR/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" >> /etc/fpc.cfg
-           echo "-Fl/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib" >> /etc/fpc.cfg
-           echo "-FD/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin" >> /etc/fpc.cfg
+           sudo echo "-XR/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" >> /etc/fpc.cfg
+           sudo echo "-Fl/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib" >> /etc/fpc.cfg
+           sudo echo "-FD/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin" >> /etc/fpc.cfg
            cat /etc/fpc.cfg
            make all
            sudo make install
