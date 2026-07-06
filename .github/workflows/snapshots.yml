@@ -20,7 +20,7 @@ jobs:
     runs-on: macos-15
     steps:
     - name: Install Free Pascal
-      uses: alexx2000/setup-fpc@master
+      uses: alexx2000/lazarus-install@mac
       with:
         lazarus-version: "stable"
 
