@@ -24,6 +24,7 @@ jobs:
             curl -L -o bootstrap.dmg \
             https://github.com/alexx2000/fpc-3.2.x/releases/download/v3.2.3-g3d1bdd937f/fpc-3.2.3-g3d1bdd937f-aarch64-macosx.dmg
             hdiutil attach bootstrap.dmg -mountpoint /Volumes/fpc-bootstrap
+            ls -la /Volumes/fpc-bootstrap/
             sudo installer -pkg /Volumes/fpc-bootstrap/fpc-3.2.3-g3d1bdd937f-aarch64-macosx/fpc-3.2.3-g3d1bdd937f-aarch64-macosx.pkg -target /                                  
             hdiutil detach /Volumes/fpc-bootstrap
 
