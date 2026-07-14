@@ -30,7 +30,7 @@ jobs:
     steps:    
       - name: Download release
         run: |
-             gh release download $TAG -R alexx2000/doublecmd -D doublecmd-release
+             gh release download $TAG -R doublecmd/doublecmd -D doublecmd-release
              rm -f doublecmd-release/doublecmd-*-src.tar.gz
         env: 
           TAG: ${{ github.ref_name }}
