@@ -20,7 +20,7 @@ jobs:
     - name: Upload binaries to snapshots
       run: |
           echo "$NOTES" > notes.txt
-          gh release create 33460 -R alexx2000/snapshots -t "Revision 33458" --latest --notes-file README.md *.pp 
+          #gh release create 33460 -R alexx2000/snapshots -t "Revision 33458" --latest --notes-file README.md *.pp 
       env:
         NOTES: ${{ vars.BODY }}      
         GH_TOKEN: ${{ secrets.SNAPSHOTS }}
@@ -35,7 +35,7 @@ jobs:
         env: 
           TAG: ${{ github.ref_name }}
       
-      - name: Publish release to SourceForge
+      - name: Publish release
         run: |
              echo "$SSH_PRIVATE_KEY" > ssh_key
              chmod 0600 ssh_key
@@ -45,7 +45,7 @@ jobs:
              echo "cd $TAG" >> upload_release.txt
              echo "put *" >> upload_release.txt
              echo "quit" >> upload_release.txt
-             sftp -o StrictHostKeyChecking=no -i <(echo "$SSH_PRIVATE_KEY") -b upload_release.txt $REMOTE_USER@$REMOTE_HOST
+             sftp -o StrictHostKeyChecking=no -i ssh_key -b upload_release.txt $REMOTE_USER@$REMOTE_HOST
              rm -f ssh_key upload_release.txt
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
