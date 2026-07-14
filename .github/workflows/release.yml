@@ -33,14 +33,24 @@ jobs:
         uses: actions/checkout@v7
     
       - name: Download release
-        run: gh release download v1.2.6 -R doublecmd/doublecmd -D release
+        run: gh release download v1.2.6 -R doublecmd/doublecmd -D doublecmd-release
+        env: 
+          TAG: ${{ github.ref_name }}
       
-      - name: Deploy to snapshot server
+      - name: Copy release to SourceForge
         run: |
-             chmod +x ./.github/scripts/upload_release.sh
-             ./.github/scripts/upload_release.sh
+             echo "$SSH_PRIVATE_KEY" > ssh_key
+             chmod 0600 ssh_key
+             echo "cd '/home/frs/project/doublecmd/Temp Folder'" > upload_release.txt
+             echo "lcd doublecmd-release" >> upload_release.txt
+             echo "-mkdir $TAG" >> upload_release.txt
+             echo "cd $TAG" >> upload_release.txt
+             echo "put *" >> upload_release.txt
+             echo "quit" >> upload_release.txt
+             sftp -o StrictHostKeyChecking=no -i ssh_key -b upload_release.txt $REMOTE_USER@$REMOTE_HOST
+             rm -f ssh_key upload_release.txt
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TAG: v1.2.6
+          TAG: ${{ github.ref_name }}
