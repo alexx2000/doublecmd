@@ -11,6 +11,7 @@ echo "$SSH_PRIVATE_KEY" > ssh_key
 chmod 0600 ssh_key
 
 echo "cd /home/frs/project/doublecmd" > upload_release.txt
+echo "lcd release" >> upload_release.txt
 echo "-mkdir $TAG" >> upload_release.txt
 echo "cd $TAG" >> upload_release.txt
 echo "put *" >> upload_release.txt
