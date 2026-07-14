@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v7
     
       - name: Download release
-        run: gh release download v1.2.6 -R doublecmd/doublecmd -D doublecmd-release
+        run: gh release download $TAG -R alexx2000/doublecmd -D doublecmd-release
         env: 
           TAG: ${{ github.ref_name }}
       
