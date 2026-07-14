@@ -20,7 +20,24 @@ jobs:
     - name: Upload binaries to snapshots
       run: |
           echo "$NOTES" > notes.txt
-          gh release create 33458 -R alexx2000/snapshots -t "Revision 33458" --latest --notes-file README.md *.pp 
+          gh release create 33459 -R alexx2000/snapshots -t "Revision 33458" --latest --notes-file README.md *.pp 
       env:
         NOTES: ${{ vars.BODY }}      
         GH_TOKEN: ${{ secrets.SNAPSHOTS }}
+
+  copy-release:
+    runs-on: ubuntu-latest
+    environment: snapshots 
+    steps:  
+      - name: Download release
+        run: gh release download v1.2.6 -R doublecmd/doublecmd
+      
+      - name: Deploy to snapshot server
+        run: |
+             chmod +x ./.github/scripts/upload_release.sh
+             ./.github/scripts/upload_release.sh
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TAG: v1.2.6
