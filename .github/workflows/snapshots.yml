@@ -79,3 +79,9 @@ jobs:
       uses: actions/download-artifact@v8
       with:
         merge-multiple: true
+
+    - name: Upload binaries to snapshots
+      run: |
+          echo ${{ vars.BODY }} > notes.txt
+          gh release create 33456 -R alexx2000/snapshots -t "Revision 33456" --latest --notes-file notes.txt * 
+   
