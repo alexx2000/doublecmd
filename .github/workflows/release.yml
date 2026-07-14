@@ -25,19 +25,17 @@ jobs:
         NOTES: ${{ vars.BODY }}      
         GH_TOKEN: ${{ secrets.SNAPSHOTS }}
 
-  copy-release:
+  upload-frs:
     runs-on: ubuntu-latest
-    environment: snapshots 
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v7
-    
+    steps:    
       - name: Download release
-        run: gh release download $TAG -R alexx2000/doublecmd -D doublecmd-release
+        run: |
+             gh release download $TAG -R alexx2000/doublecmd -D doublecmd-release
+             rm -f doublecmd-release/doublecmd-*-src.tar.gz
         env: 
           TAG: ${{ github.ref_name }}
       
-      - name: Copy release to SourceForge
+      - name: Publish release to SourceForge
         run: |
              echo "$SSH_PRIVATE_KEY" > ssh_key
              chmod 0600 ssh_key
