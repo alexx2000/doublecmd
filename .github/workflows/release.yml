@@ -20,7 +20,7 @@ jobs:
     - name: Upload binaries to snapshots
       run: |
           echo "$NOTES" > notes.txt
-          gh release create 33457 -R alexx2000/snapshots -t "Revision 33457" --latest --notes-file notes.txt *.pp 
+          gh release create 33457 -R alexx2000/snapshots -t "Revision 33457" --latest --notes-file README.md *.pp 
       env:
         NOTES: ${{ vars.BODY }}      
         GH_TOKEN: ${{ secrets.SNAPSHOTS }}
