@@ -37,8 +37,8 @@ jobs:
       
       - name: Publish release
         run: |
-             echo "$SSH_PRIVATE_KEY" > ssh_key
-             chmod 0600 ssh_key
+             trap "echo Hellloo" EXIT
+             echo "$SSH_PRIVATE_KEY" > ssh_key && chmod 0600 ssh_key
              echo "cd '/home/frs/project/doublecmd/Double Commander'" > upload_release.txt
              echo "lcd doublecmd-release" >> upload_release.txt
              echo "-mkdir $TAG" >> upload_release.txt
