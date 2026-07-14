@@ -45,7 +45,7 @@ jobs:
              echo "cd $TAG" >> upload_release.txt
              echo "put *" >> upload_release.txt
              echo "quit" >> upload_release.txt
-             sftp -o StrictHostKeyChecking=no -i ssh_key -b upload_release.txt $REMOTE_USER@$REMOTE_HOST
+             sftp -o StrictHostKeyChecking=no -i <(echo "$SSH_PRIVATE_KEY") -b upload_release.txt $REMOTE_USER@$REMOTE_HOST
              rm -f ssh_key upload_release.txt
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
