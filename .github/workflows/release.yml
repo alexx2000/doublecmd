@@ -26,6 +26,7 @@ jobs:
         GH_TOKEN: ${{ secrets.SNAPSHOTS }}
 
   upload-frs:
+    needs: build-lin
     runs-on: ubuntu-latest
     steps:    
       - name: Download release
