@@ -152,7 +152,7 @@ end;
 
 if (TargetOS = &apos;linux&apos;) then
 begin
-  LinkerOptions += &apos; -z relro --as-needed&apos;;
+  LinkerOptions += &apos; -z relro --as-needed --allow-shlib-undefined&apos;;
 end;
 
 if LCLWidgetType &lt;> GetIDEValue(&apos;LCLWidgetType&apos;) then
