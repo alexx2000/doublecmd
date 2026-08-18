@@ -21,6 +21,7 @@ wget https://github.com/doublecmd/external/raw/main/linux.tar.gz
 tar xzf linux.tar.gz
 rm -f linux.tar.gz
 popd
+echo -k--allow-shlib-undefined | sudo tee -a /etc/fpc.cfg
 
 # Set processor architecture
 export CPU_TARGET=$(fpc -iTP)
