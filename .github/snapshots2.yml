@@ -1,0 +1,57 @@
+name: build-snapshot2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+    - 'components/**'
+    - 'plugins/**'
+    - 'sdk/**'
+    - 'src/**'
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-lin:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Install dependencies
+      run: |
+           sudo apt update
+           sudo apt install fpc patchelf libgtk-3-dev libdbus-1-dev zip
+
+    - name: Get Lazarus source
+      uses: actions/checkout@v7
+      with:
+            repository: 'fpc/Lazarus'
+
+    - name: Build and install Lazarus
+      run: |
+           make all
+           sudo make install
+
+    - name: Create Lazarus config
+      run: |
+           mkdir -p $HOME/.lazarus
+           cp tools/install/linux/environmentoptions.xml $HOME/.lazarus/environmentoptions.xml
+           sed -i -e "s|__LAZARUSDIR__|/usr/local/share/lazarus|g" $HOME/.lazarus/environmentoptions.xml
+
+    - name: Checkout source
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+
+    - name: Build packages
+      run: ./.github/scripts/create_snapshot.lnx
+
+    - name: Share data between jobs
+      uses: actions/upload-artifact@v7
+      with:
+        name: snapshot-lin
+        retention-days: 1
+        compression-level: 0
+        path: doublecmd-release/doublecmd*.tar.xz
