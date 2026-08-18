@@ -52,9 +52,9 @@ build_doublecmd()
 mkdir -p $PACK_DIR
 
 # Set widgetset
-export lcl=gtk3
+#export lcl=gtk3
 
-build_doublecmd
+#build_doublecmd
 
 # Set widgetset
 export lcl=qt6
