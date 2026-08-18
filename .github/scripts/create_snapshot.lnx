@@ -22,14 +22,13 @@ tar xzf linux.tar.gz
 rm -f linux.tar.gz
 popd
 
-# Set widgetset
-export lcl=gtk3
-
 # Set processor architecture
 export CPU_TARGET=$(fpc -iTP)
 
 build_doublecmd()
 {
+  ./clean.sh
+
   # Build all components of Double Commander
   ./build.sh release
 
@@ -51,5 +50,13 @@ build_doublecmd()
 }
 
 mkdir -p $PACK_DIR
+
+# Set widgetset
+export lcl=gtk3
+
+build_doublecmd
+
+# Set widgetset
+export lcl=qt6
 
 build_doublecmd
