@@ -22,9 +22,9 @@ export CPU_TARGET=$(fpc -iTP)
 wget https://github.com/doublecmd/external/raw/main/linux.tar.gz
 tar xzf linux.tar.gz -C install && rm -f linux.tar.gz
 
-# Prepare configuration
+# Prepare linking dependencies
 echo "-k--allow-shlib-undefined" | sudo tee -a /etc/fpc.cfg
-sudo ln -sf $PWD/install/linux/$CPU_TARGET/qt6/libQt6Pas.so.2 /usr/local/lib/libQt6Pas.so
+sudo ln -sf $PWD/install/linux/$CPU_TARGET/qt6/libQt6Pas.so.6 /usr/local/lib/libQt6Pas.so
 
 build_doublecmd()
 {
