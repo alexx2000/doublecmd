@@ -32,6 +32,7 @@ jobs:
 
     - name: Build and install Lazarus
       run: |
+           sed -i -e "s|GLib2|LazGLib2|g" lcl/interfaces/gtk3/gtk3wstrayicon.pas
            make all
            sudo make install
 
