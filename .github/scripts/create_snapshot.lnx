@@ -22,18 +22,18 @@ export CPU_TARGET=$(fpc -iTP)
 wget https://github.com/doublecmd/external/raw/main/linux.tar.gz
 tar xzf linux.tar.gz -C install && rm -f linux.tar.gz
 
+# Copy libraries
+cp -a install/linux/lib/$CPU_TARGET/*.so       ./
+cp -a install/linux/lib/$CPU_TARGET/qt6/*.so*  ./
+
 # Prepare linking dependencies
 echo "-k--allow-shlib-undefined" | sudo tee -a /etc/fpc.cfg
 sudo ln -sf $PWD/install/linux/lib/$CPU_TARGET/qt6/libQt6Pas.so.6 /usr/lib/libQt6Pas.so
 
 build_doublecmd()
 {
-  # Build all components of Double Commander
+  # Build release
   ./build.sh release
-
-  # Copy libraries
-  cp -a install/linux/lib/$CPU_TARGET/*.so        ./
-  cp -a install/linux/lib/$CPU_TARGET/$lcl/*.so*  ./
 
   # Create *.tar.xz package
   mkdir -p $BUILD_PACK_DIR
@@ -52,9 +52,9 @@ build_doublecmd()
 mkdir -p $PACK_DIR
 
 # Set widgetset
-#export lcl=gtk3
+export lcl=gtk3
 
-#build_doublecmd
+build_doublecmd
 
 # Set widgetset
 export lcl=qt6
