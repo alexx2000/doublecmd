@@ -24,7 +24,6 @@ tar xzf linux.tar.gz -C install && rm -f linux.tar.gz
 
 # Copy libraries
 cp -a install/linux/lib/$CPU_TARGET/*.so       ./
-cp -a install/linux/lib/$CPU_TARGET/qt6/*.so*  ./
 
 # Prepare linking dependencies
 echo "-k--allow-shlib-undefined" | sudo tee -a /etc/fpc.cfg
@@ -34,6 +33,9 @@ build_doublecmd()
 {
   # Build release
   ./build.sh release
+
+  # Copy libraries
+  cp -a install/linux/lib/$CPU_TARGET/$lcl/*.so*  ./
 
   # Create *.tar.xz package
   mkdir -p $BUILD_PACK_DIR
