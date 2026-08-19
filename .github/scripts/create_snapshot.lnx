@@ -34,7 +34,8 @@ build_doublecmd()
   ./build.sh release
 
   # Copy libraries
-  cp -a install/linux/lib/$CPU_TARGET/*.so ./
+  cp -a install/linux/lib/$CPU_TARGET/*.so        ./
+  cp -a install/linux/lib/$CPU_TARGET/$lcl/*.so*  ./
 
   # Create *.tar.xz package
   mkdir -p $BUILD_PACK_DIR
