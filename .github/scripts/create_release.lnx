@@ -31,7 +31,8 @@ cp -a install/linux/lib/$CPU_TARGET/*.so  ./
 
 # Prepare linking dependencies
 echo "-XR$PWD/sysroot" | sudo tee -a /etc/fpc.cfg
-echo "-k--allow-shlib-undefined" | sudo tee -a /etc/fpc.cfg
+echo "-k--sysroot=$PWD/sysroot" | sudo tee -a /etc/fpc.cfg
+#echo "-k--allow-shlib-undefined" | sudo tee -a /etc/fpc.cfg
 ln -sf $PWD/install/linux/lib/$CPU_TARGET/qt6/libQt6Pas.so.6 $PWD/sysroot/usr/lib/libQt6Pas.so
 
 build_doublecmd()
