@@ -19,9 +19,8 @@ DC_VER=$DC_MAJOR.$DC_MINOR.$DC_MICRO
 export CPU_TARGET=$(fpc -iTP)
 
 # Get sysroot
-mkdir sysroot
 wget https://github.com/alexx2000/snapshots/releases/download/sysroot/ubuntu-20.04-$CPU_TARGET.tar.xz
-tar xpf ubuntu-20.04-$CPU_TARGET.tar.xz -C sysroot && rm -f ubuntu-20.04-$CPU_TARGET.tar.xz
+tar xpf ubuntu-20.04-$CPU_TARGET.tar.xz && rm -f ubuntu-20.04-$CPU_TARGET.tar.xz
 
 # Get libraries
 wget https://github.com/doublecmd/external/raw/main/linux.tar.gz
