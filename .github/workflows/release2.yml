@@ -51,7 +51,9 @@ jobs:
         fetch-depth: 0
 
     - name: Build packages
-      run: ./.github/scripts/create_release.lnx
+      run: |
+            chmod +x ./.github/scripts/create_release.lnx
+            ./.github/scripts/create_release.lnx
 
     - name: Share data between jobs
       uses: actions/upload-artifact@v7
