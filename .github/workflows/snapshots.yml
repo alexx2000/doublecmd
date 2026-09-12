@@ -22,14 +22,14 @@ jobs:
     - name: Install Free Pascal
       run: |
             curl -L -o fpc.dmg \
-            https://github.com/alexx2000/fpc-3.2.x/releases/download/v3.2.3-g0eeb544f39/fpc-3.2.3-g0eeb544f39-aarch64-macosx.dmg
+            https://github.com/alexx2000/fpc-3.2.x/releases/download/v3.2.4-rc2-g82947b0dc1/fpc-3.2.4-rc2-g82947b0dc1-aarch64-macosx.dmg
             hdiutil attach fpc.dmg -mountpoint /Volumes/fpc-dmg
-            sudo installer -pkg /Volumes/fpc-dmg/fpc-3.2.3-g0eeb544f39-aarch64-macosx.pkg -target /                                  
+            sudo installer -pkg /Volumes/fpc-dmg/fpc-3.2.4-rc2-g82947b0dc1-aarch64-macosx.pkg -target /                                  
             hdiutil detach /Volumes/fpc-dmg
 
     - name: Create Free Pascal config
       run: |
-            sudo fpcmkcfg -d "basepath=/usr/local/lib/fpc/3.2.3" -o /etc/fpc.cfg
+            sudo fpcmkcfg -d "basepath=/usr/local/lib/fpc/3.2.4" -o /etc/fpc.cfg
   
     - name: Get Lazarus source
       uses: actions/checkout@v7
