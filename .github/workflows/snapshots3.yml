@@ -1,0 +1,72 @@
+name: build-snapshot
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+    - 'components/**'
+    - 'plugins/**'
+    - 'sdk/**'
+    - 'src/**'
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-mac:
+    runs-on: macos-15
+    steps:
+    - name: Install Free Pascal
+      run: |
+            curl -L -o "${{ runner.temp }}/fpc.dmg" \
+            https://downloads.freepascal.org/fpc/beta/3.2.4-rc2/aarch64-macosx/fpc-3.2.4rc2.intelarm64-macosx.dmg
+            hdiutil attach "${{ runner.temp }}/fpc.dmg" -mountpoint /Volumes/fpc
+            sudo installer -pkg /Volumes/fpc/fpc-3.2.4rc2-intelarm64-macosx.pkg -target /                                  
+
+    - name: Save Free Pascal to cache
+      id: cache-fpc-save
+      uses: actions/cache/save@v6
+      with:
+        path: /Volumes/fpc
+        key: ${{ runner.os }}-fpc
+  
+    - name: Get Lazarus source
+      uses: actions/checkout@v7
+      with:
+            repository: 'fpc/Lazarus'
+
+    - name: Build and install Lazarus
+      run: |
+           make all
+           sudo make install
+
+    - name: Create Lazarus config
+      run: |
+           mkdir -p $HOME/.lazarus
+           cp tools/install/macosx/environmentoptions.xml $HOME/.lazarus/environmentoptions.xml
+           sed -i -e "s|_PPCARCH_|fpc|g; s|/Developer/lazarus|/usr/local/share/lazarus|g" $HOME/.lazarus/environmentoptions.xml
+
+    - name: Checkout source
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+
+    - name: Prepare source
+      run: sed -i -e "s|BOX_CLIENT_SECRET = '\*'|BOX_CLIENT_SECRET = '$BOX_CLIENT_SECRET'|g" plugins/wfx/MacCloud/src/drivers/oauth2/box/uboxclient.pas
+      env:
+        BOX_CLIENT_SECRET: ${{ secrets.BOX_CLIENT_SECRET }}
+
+    - name: Build packages
+      run: ./.github/scripts/create_snapshot.sh
+
+    - name: Share data between jobs
+      uses: actions/upload-artifact@v7
+      with:
+        name: snapshot-mac
+        retention-days: 1
+        compression-level: 0
+        path: doublecmd-release/doublecmd*.dmg
+   
