@@ -42,7 +42,7 @@ jobs:
         key: ${{ runner.os }}-fpc
 
     - name: Install Free Pascal
-      run: sudo installer -pkg /Volumes/fpc/fpc-3.2.4rc2-intelarm64-macosx.pkg -target /
+      run: sudo installer -pkg /Volumes/fpc-dmg/fpc-3.2.4rc2-intelarm64-macosx.pkg -target /
   
     - name: Get Lazarus source
       uses: actions/checkout@v7
