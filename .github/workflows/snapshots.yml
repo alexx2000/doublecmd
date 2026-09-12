@@ -21,11 +21,11 @@ jobs:
     steps:
     - name: Install Free Pascal
       run: |
-            curl -L -o bootstrap.dmg \
-            https://github.com/alexx2000/fpc-3.2.x/releases/download/v3.2.3-g3d1bdd937f/fpc-3.2.3-g3d1bdd937f-aarch64-macosx.dmg
-            hdiutil attach bootstrap.dmg -mountpoint /Volumes/fpc-bootstrap
-            sudo installer -pkg /Volumes/fpc-bootstrap/fpc-3.2.3-g3d1bdd937f-aarch64-macosx.pkg -target /                                  
-            hdiutil detach /Volumes/fpc-bootstrap
+            curl -L -o fpc.dmg \
+            https://github.com/alexx2000/fpc-3.2.x/releases/download/v3.2.3-g0eeb544f39/fpc-3.2.3-g0eeb544f39-aarch64-macosx.dmg
+            hdiutil attach fpc.dmg -mountpoint /Volumes/fpc-dmg
+            sudo installer -pkg /Volumes/fpc-dmg/fpc-3.2.3-g0eeb544f39-aarch64-macosx.pkg -target /                                  
+            hdiutil detach /Volumes/fpc-dmg
 
     - name: Create Free Pascal config
       run: |
