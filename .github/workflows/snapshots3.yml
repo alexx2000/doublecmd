@@ -23,7 +23,7 @@ jobs:
       id: cache-fpc-restore
       uses: actions/cache/restore@v6
       with:
-        path: /Volumes/fpc-dmg
+        path: ${{ runner.temp }}/fpc-dmg
         key: ${{ runner.os }}-fpc
     
     - name: Download Free Pascal
@@ -31,18 +31,18 @@ jobs:
       run: |
             curl -L -o "${{ runner.temp }}/fpc.dmg" \
             https://downloads.freepascal.org/fpc/beta/3.2.4-rc2/aarch64-macosx/fpc-3.2.4rc2.intelarm64-macosx.dmg
-            hdiutil attach "${{ runner.temp }}/fpc.dmg" -mountpoint /Volumes/fpc-dmg
+            hdiutil attach "${{ runner.temp }}/fpc.dmg" -mountpoint ${{ runner.temp }}/fpc-dmg
 
     - name: Save Free Pascal to cache
       if: steps.cache-fpc-restore.outputs.cache-hit != 'true'    
       id: cache-fpc-save
       uses: actions/cache/save@v6
       with:
-        path: /Volumes/fpc-dmg
+        path: ${{ runner.temp }}/fpc-dmg
         key: ${{ runner.os }}-fpc
 
     - name: Install Free Pascal
-      run: sudo installer -pkg /Volumes/fpc-dmg/fpc-3.2.4rc2-intelarm64-macosx.pkg -target /
+      run: sudo installer -pkg "${{ runner.temp }}/fpc-dmg/fpc-3.2.4rc2-intelarm64-macosx.pkg" -target /
   
     - name: Get Lazarus source
       uses: actions/checkout@v7
