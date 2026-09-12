@@ -1,4 +1,4 @@
-name: build-snapshot
+name: build-snapshot3
 
 on:
   workflow_dispatch:
