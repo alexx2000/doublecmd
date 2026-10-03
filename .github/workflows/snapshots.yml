@@ -21,10 +21,9 @@ jobs:
     steps:
     - name: Install Free Pascal
       run: |
-            curl -L -o fpc.dmg \
-            https://github.com/alexx2000/fpc-3.2.x/releases/download/v3.2.4-rc2-g82947b0dc1/fpc-3.2.4-rc2-g82947b0dc1-aarch64-macosx.dmg
+            curl -L -o fpc.dmg https://github.com/alexx2000/fpc-3.2.x/releases/download/v3.2.4-rc2/fpc-3.2.4-rc2-aarch64-macosx.dmg
             hdiutil attach fpc.dmg -mountpoint /Volumes/fpc-dmg
-            sudo installer -pkg /Volumes/fpc-dmg/fpc-3.2.4-rc2-g82947b0dc1-aarch64-macosx.pkg -target /                                  
+            sudo installer -pkg /Volumes/fpc-dmg/fpc-3.2.4-rc2-aarch64-macosx.pkg -target /                                  
             hdiutil detach /Volumes/fpc-dmg
 
     - name: Create Free Pascal config
@@ -68,22 +67,3 @@ jobs:
         compression-level: 0
         path: doublecmd-release/doublecmd*.dmg
 
-
-
-  upload:
-    needs: [build-mac]
-    runs-on: ubuntu-latest
-    environment: snapshots
-    steps:
-    - name: Download artifacts
-      uses: actions/download-artifact@v8
-      with:
-        merge-multiple: true
-
-    - name: Upload binaries to snapshots
-      run: |
-          echo ${{ vars.BODY }} > notes.txt
-          gh release create 33456 -R alexx2000/snapshots -t "Revision 33456" --latest --notes-file notes.txt * 
-      env:
-        GH_TOKEN: ${{ github.token }}          
-   
