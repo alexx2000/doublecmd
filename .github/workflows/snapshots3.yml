@@ -61,5 +61,24 @@ jobs:
            cp tools/install/macosx/environmentoptions.xml $HOME/.lazarus/environmentoptions.xml
            sed -i -e "s|_PPCARCH_|fpc|g; s|/Developer/lazarus|/usr/local/share/lazarus|g" $HOME/.lazarus/environmentoptions.xml
 
+    - name: Checkout source
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
 
+    - name: Prepare source
+      run: sed -i -e "s|BOX_CLIENT_SECRET = '\*'|BOX_CLIENT_SECRET = '$BOX_CLIENT_SECRET'|g" plugins/wfx/MacCloud/src/drivers/oauth2/box/uboxclient.pas
+      env:
+        BOX_CLIENT_SECRET: ${{ secrets.BOX_CLIENT_SECRET }}
+
+    - name: Build packages
+      run: ./.github/scripts/create_snapshot.sh
+
+    - name: Share data between jobs
+      uses: actions/upload-artifact@v7
+      with:
+        name: snapshot-mac
+        retention-days: 1
+        compression-level: 0
+        path: doublecmd-release/doublecmd*.dmg
    
