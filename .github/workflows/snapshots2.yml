@@ -42,5 +42,5 @@ jobs:
 
     - name: Install Lazarus
       run: |
-           "${{ runner.temp }}\laz-exe\laz-64.exe /VERYSILENT /SP-
-           "${{ runner.temp }}\laz-exe\laz-32.exe /VERYSILENT /SP-
+           "${{ runner.temp }}\laz-exe\laz-64.exe" /VERYSILENT /SP-
+           "${{ runner.temp }}\laz-exe\laz-32.exe" /VERYSILENT /SP-
