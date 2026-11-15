@@ -23,24 +23,24 @@ jobs:
       id: laz-restore
       uses: actions/cache/restore@v6
       with:
-        path: ${{ runner.temp }}/laz-exe
+        path: ${{ runner.temp }}\laz-exe
         key: ${{ runner.os }}-laz
 
     - name: Download lazarus from site
       if: steps.laz-restore.outputs.cache-hit != 'true'
       run: |
-            mkdir "${{ runner.temp }}/laz-exe"
+            mkdir "${{ runner.temp }}\laz-exe"
             curl -L -o "${{ runner.temp }}\laz-exe\laz-64.exe" "https://prdownloads.sourceforge.net/lazarus/lazarus-5.0RC1-fpc-3.2.2-win64.exe"
-            curl -L -o "${{ runner.temp }}\laz-exe\laz-32.exe" https://prdownloads.sourceforge.net/lazarus/lazarus-5.0RC1-fpc-3.2.2-cross-i386-win32-win64.exe
+            curl -L -o "${{ runner.temp }}\laz-exe\laz-32.exe" "https://prdownloads.sourceforge.net/lazarus/lazarus-5.0RC1-fpc-3.2.2-cross-i386-win32-win64.exe"
 
     - name: Save lazarus to cache
       if: steps.laz-restore.outputs.cache-hit != 'true'
       uses: actions/cache/save@v6
       with:
-        path: ${{ runner.temp }}/laz-exe
+        path: ${{ runner.temp }}\laz-exe
         key: ${{ runner.os }}-laz
 
     - name: Install Lazarus
       run: |
-           "${{ runner.temp }}/laz-exe/laz-64.exe /VERYSILENT /SP-
-           "${{ runner.temp }}/laz-exe/laz-32.exe /VERYSILENT /SP-
+           "${{ runner.temp }}\laz-exe\laz-64.exe /VERYSILENT /SP-
+           "${{ runner.temp }}\laz-exe\laz-32.exe /VERYSILENT /SP-
