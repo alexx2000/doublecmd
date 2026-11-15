@@ -30,10 +30,8 @@ jobs:
       if: steps.laz-restore.outputs.cache-hit != 'true'
       run: |
             mkdir "${{ runner.temp }}/laz-exe"
-            curl -L -o "${{ runner.temp }}\laz-exe\laz-64.exe" \
-              https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%205.0RC1/lazarus-5.0RC1-fpc-3.2.2-win64.exe
-            curl -L -o "${{ runner.temp }}\laz-exe\laz-32.exe" \
-              https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%205.0RC1/lazarus-5.0RC1-fpc-3.2.2-cross-i386-win32-win64.exe
+            curl -L -o "${{ runner.temp }}\laz-exe\laz-64.exe" "https://prdownloads.sourceforge.net/lazarus/lazarus-5.0RC1-fpc-3.2.2-win64.exe"
+            curl -L -o "${{ runner.temp }}\laz-exe\laz-32.exe" https://prdownloads.sourceforge.net/lazarus/lazarus-5.0RC1-fpc-3.2.2-cross-i386-win32-win64.exe
 
     - name: Save lazarus to cache
       if: steps.laz-restore.outputs.cache-hit != 'true'
