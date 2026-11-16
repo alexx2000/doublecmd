@@ -46,3 +46,8 @@ jobs:
       with:
         path: ${{ runner.temp }}\lazarus
         key: ${{ runner.os }}-laz2
+
+    - name: Test Lazarus
+      shell: cmd
+      run: |
+            "${{ runner.temp }}\lazarus\lazbuild" --help
