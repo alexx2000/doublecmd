@@ -1,0 +1,47 @@
+name: build-snapshot2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+    - 'components/**'
+    - 'plugins/**'
+    - 'sdk/**'
+    - 'src/**'
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-win:
+    runs-on: windows-latest
+    steps:
+    - name: Restore lazarus from cache
+      id: laz-restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ runner.temp }}\lazarus
+        key: ${{ runner.os }}-laz2
+
+    - name: Download lazarus from site
+      if: steps.laz-restore.outputs.cache-hit != 'true'
+      run: |
+            mkdir "${{ runner.temp }}\laz-exe"
+            curl -L -o "${{ runner.temp }}\laz-exe\laz-64.exe" "https://prdownloads.sourceforge.net/lazarus/lazarus-5.0RC1-fpc-3.2.2-win64.exe"
+            curl -L -o "${{ runner.temp }}\laz-exe\laz-32.exe" "https://prdownloads.sourceforge.net/lazarus/lazarus-5.0RC1-fpc-3.2.2-cross-i386-win32-win64.exe"
+
+    - name: Install Lazarus
+      shell: cmd
+      run: |
+           "${{ runner.temp }}\laz-exe\laz-64.exe" /VERYSILENT /SP- /DIR="${{ runner.temp }}\lazarus"
+           "${{ runner.temp }}\laz-exe\laz-32.exe" /VERYSILENT /SP- /DIR="${{ runner.temp }}\lazarus"
+
+    - name: Save lazarus to cache
+      if: steps.laz-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ runner.temp }}\lazarus
+        key: ${{ runner.os }}-laz2
