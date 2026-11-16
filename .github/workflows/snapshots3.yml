@@ -34,6 +34,7 @@ jobs:
             curl -L -o "${{ runner.temp }}\laz-exe\laz-32.exe" "https://prdownloads.sourceforge.net/lazarus/lazarus-5.0RC1-fpc-3.2.2-cross-i386-win32-win64.exe"
 
     - name: Install Lazarus
+      if: steps.laz-restore.outputs.cache-hit != 'true'
       shell: cmd
       run: |
            "${{ runner.temp }}\laz-exe\laz-64.exe" /VERYSILENT /SP- /DIR="${{ runner.temp }}\lazarus"
