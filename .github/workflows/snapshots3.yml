@@ -47,7 +47,23 @@ jobs:
         path: ${{ runner.temp }}\lazarus
         key: ${{ runner.os }}-laz2
 
-    - name: Test Lazarus
-      shell: cmd
-      run: |
-            "${{ runner.temp }}\lazarus\lazbuild" --help
+    - name: Checkout source
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+
+    - name: Restore timestamps
+      uses: chetan/git-restore-mtime-action@v2
+
+    - name: Build packages
+      run: ./.github/scripts/create_snapshot.bat
+      env:
+        LAZARUS_HOME: ${{ runner.temp }}\lazarus
+
+    - name: Share data between jobs
+      uses: actions/upload-artifact@v7
+      with:
+        name: snapshot-win
+        retention-days: 1
+        compression-level: 0
+        path: doublecmd-release/*
